@@ -1,0 +1,12 @@
+# Compiled benchmark binaries
+clickbench_concurrent/clickbench_concurrent
+fts_experiment/fts_test
+tantivy_bench/tantivy_bench
+
+# Local run logs and result snapshots (large, machine-specific)
+clickbench/local/
+clickbench/ab_*.json
+clickbench/ab_*.txt
+
+# macOS
+.DS_Store

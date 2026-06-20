@@ -1,0 +1,40 @@
+=== RUN   TestWireSize_SmallQuery
+    msgpack_query_test.go:126: Small query wire sizes — json=997 bytes  msgpack(struct)=789 bytes  msgpack(stream)=742 bytes  json/msgpack-stream=1.34x
+--- PASS: TestWireSize_SmallQuery (0.00s)
+=== RUN   TestWireSize_LargeQuery
+    msgpack_query_test.go:144: Large query wire sizes — json=131800 bytes  msgpack(struct)=93068 bytes  msgpack(stream)=84151 bytes  json/msgpack-stream=1.57x
+--- PASS: TestWireSize_LargeQuery (0.00s)
+goos: darwin
+goarch: arm64
+pkg: github.com/basekick-labs/arc/benchmarks/msgpack_bench
+cpu: Apple M3 Max
+BenchmarkJSON_StdLib_Marshal_SmallQuery
+BenchmarkJSON_StdLib_Marshal_SmallQuery-14         	  405580	      3004 ns/op	    1120 B/op	       2 allocs/op
+BenchmarkJSON_Goccy_Marshal_SmallQuery
+BenchmarkJSON_Goccy_Marshal_SmallQuery-14          	  470842	      2628 ns/op	    1120 B/op	       2 allocs/op
+BenchmarkJSON_Segmentio_Marshal_SmallQuery
+BenchmarkJSON_Segmentio_Marshal_SmallQuery-14      	  606315	      1955 ns/op	    1120 B/op	       2 allocs/op
+BenchmarkJSON_StdLib_Marshal_LargeQuery
+BenchmarkJSON_StdLib_Marshal_LargeQuery-14         	    2601	    459344 ns/op	  139458 B/op	       2 allocs/op
+BenchmarkJSON_Goccy_Marshal_LargeQuery
+BenchmarkJSON_Goccy_Marshal_LargeQuery-14          	    2782	    430656 ns/op	  144034 B/op	       2 allocs/op
+BenchmarkJSON_Segmentio_Marshal_LargeQuery
+BenchmarkJSON_Segmentio_Marshal_LargeQuery-14      	    3670	    325532 ns/op	  140010 B/op	       2 allocs/op
+BenchmarkJSON_StdLib_Unmarshal_LargeQuery
+BenchmarkJSON_StdLib_Unmarshal_LargeQuery-14       	    1054	   1157076 ns/op	  545963 B/op	   20031 allocs/op
+BenchmarkJSON_Goccy_Unmarshal_LargeQuery
+BenchmarkJSON_Goccy_Unmarshal_LargeQuery-14        	    1896	    624473 ns/op	  535440 B/op	   18014 allocs/op
+BenchmarkJSON_Segmentio_Unmarshal_LargeQuery
+BenchmarkJSON_Segmentio_Unmarshal_LargeQuery-14    	    2052	    590075 ns/op	  369586 B/op	   12019 allocs/op
+BenchmarkMsgpack_Marshal_SmallQuery
+BenchmarkMsgpack_Marshal_SmallQuery-14             	  606799	      1954 ns/op	     992 B/op	       2 allocs/op
+BenchmarkMsgpack_Marshal_LargeQuery
+BenchmarkMsgpack_Marshal_LargeQuery-14             	    3751	    329304 ns/op	  482610 B/op	      25 allocs/op
+BenchmarkMsgpack_Stream_SmallQuery
+BenchmarkMsgpack_Stream_SmallQuery-14              	 2725018	       441.0 ns/op	1680.37 MB/s	       0 B/op	       0 allocs/op
+BenchmarkMsgpack_Stream_LargeQuery
+BenchmarkMsgpack_Stream_LargeQuery-14              	   27145	     44349 ns/op	1897.46 MB/s	       9 B/op	       0 allocs/op
+BenchmarkMsgpack_Unmarshal_LargeQuery
+BenchmarkMsgpack_Unmarshal_LargeQuery-14           	    2179	    546335 ns/op	  513957 B/op	   15016 allocs/op
+PASS
+ok  	github.com/basekick-labs/arc/benchmarks/msgpack_bench	19.409s
