@@ -1,0 +1,6 @@
+/sizing_bench
+__pycache__/
+*.pyc
+*.test
+/token
+/ssh_key

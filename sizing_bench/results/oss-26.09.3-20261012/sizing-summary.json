@@ -1,0 +1,332 @@
+{
+  "ingestion": [
+    {
+      "server": "small",
+      "wal": "on",
+      "protocol": "msgpack",
+      "measured_pps": 2793216.31741615,
+      "offered_pps": 2800000,
+      "seconds": 600.012605379,
+      "acknowledged_rows": 1716835000,
+      "persisted_rows": 1716835000,
+      "drain_seconds": 2.2959207469998546
+    },
+    {
+      "server": "small",
+      "wal": "on",
+      "protocol": "lineprotocol",
+      "measured_pps": 349716.6581110907,
+      "offered_pps": 350000,
+      "seconds": 600.100095699,
+      "acknowledged_rows": 215050000,
+      "persisted_rows": 215050000,
+      "drain_seconds": 0.7584544949999099
+    },
+    {
+      "server": "small",
+      "wal": "off",
+      "protocol": "msgpack",
+      "measured_pps": 3989910.0105563025,
+      "offered_pps": 4000000,
+      "seconds": 600.008519908,
+      "acknowledged_rows": 2452280000,
+      "persisted_rows": 2452280000,
+      "drain_seconds": 2.324783201000173
+    },
+    {
+      "server": "small",
+      "wal": "off",
+      "protocol": "lineprotocol",
+      "measured_pps": 699157.7670756072,
+      "offered_pps": 700000,
+      "seconds": 600.036243257,
+      "acknowledged_rows": 429775000,
+      "persisted_rows": 429775000,
+      "drain_seconds": 0.336007736999818
+    },
+    {
+      "server": "medium",
+      "wal": "on",
+      "protocol": "msgpack",
+      "measured_pps": 2795503.8000353696,
+      "offered_pps": 2800000,
+      "seconds": 600.013493088,
+      "acknowledged_rows": 1718205000,
+      "persisted_rows": 1718205000,
+      "drain_seconds": 2.21528284399983
+    },
+    {
+      "server": "medium",
+      "wal": "on",
+      "protocol": "lineprotocol",
+      "measured_pps": 699148.8563559282,
+      "offered_pps": 700000,
+      "seconds": 600.036739224,
+      "acknowledged_rows": 429765000,
+      "persisted_rows": 429765000,
+      "drain_seconds": 2.537152608000042
+    },
+    {
+      "server": "medium",
+      "wal": "off",
+      "protocol": "msgpack",
+      "measured_pps": 5588824.539197252,
+      "offered_pps": 5600000,
+      "seconds": 600.006311968,
+      "acknowledged_rows": 3434910000,
+      "persisted_rows": 3434910000,
+      "drain_seconds": 2.24425847800012
+    },
+    {
+      "server": "medium",
+      "wal": "off",
+      "protocol": "lineprotocol",
+      "measured_pps": 1398083.0510389504,
+      "offered_pps": 1400000,
+      "seconds": 600.014426451,
+      "acknowledged_rows": 859320000,
+      "persisted_rows": 859320000,
+      "drain_seconds": 2.2597155089997614
+    },
+    {
+      "server": "large",
+      "wal": "on",
+      "protocol": "msgpack",
+      "measured_pps": 2795421.059727616,
+      "offered_pps": 2800000,
+      "seconds": 600.011577563,
+      "acknowledged_rows": 1718200000,
+      "persisted_rows": 1718200000,
+      "drain_seconds": 2.1483104720000483
+    },
+    {
+      "server": "large",
+      "wal": "on",
+      "protocol": "lineprotocol",
+      "measured_pps": 1398081.321712189,
+      "offered_pps": 1400000,
+      "seconds": 600.015168626,
+      "acknowledged_rows": 859290000,
+      "persisted_rows": 859290000,
+      "drain_seconds": 2.4821857749998344
+    },
+    {
+      "server": "large",
+      "wal": "off",
+      "protocol": "msgpack",
+      "measured_pps": 5585533.296189748,
+      "offered_pps": 5600000,
+      "seconds": 600.005375008,
+      "acknowledged_rows": 3432890000,
+      "persisted_rows": 3432890000,
+      "drain_seconds": 2.1343778399996154
+    },
+    {
+      "server": "large",
+      "wal": "off",
+      "protocol": "lineprotocol",
+      "measured_pps": 1398148.4145953208,
+      "offered_pps": 1400000,
+      "seconds": 600.014984992,
+      "acknowledged_rows": 859370000,
+      "persisted_rows": 859370000,
+      "drain_seconds": 0.2232899760001601
+    }
+  ],
+  "queries": [
+    {
+      "server": "small",
+      "wal": "on",
+      "hosts": 10000,
+      "workers": 2,
+      "median_qps": 3.314949680756791,
+      "qps_min": 3.271971868633962,
+      "qps_max": 3.3286445926955865,
+      "worst_p95_ms": 1119.643
+    },
+    {
+      "server": "small",
+      "wal": "off",
+      "hosts": 10000,
+      "workers": 2,
+      "median_qps": 3.289338788968893,
+      "qps_min": 3.2774505536892193,
+      "qps_max": 3.292959162549788,
+      "worst_p95_ms": 1117.562
+    },
+    {
+      "server": "medium",
+      "wal": "on",
+      "hosts": 10000,
+      "workers": 2,
+      "median_qps": 6.27824013430093,
+      "qps_min": 6.143650358836508,
+      "qps_max": 6.318466169463185,
+      "worst_p95_ms": 589.722
+    },
+    {
+      "server": "medium",
+      "wal": "off",
+      "hosts": 10000,
+      "workers": 4,
+      "median_qps": 6.3528274769605835,
+      "qps_min": 6.33936228047339,
+      "qps_max": 6.369267492443236,
+      "worst_p95_ms": 1400.849
+    },
+    {
+      "server": "large",
+      "wal": "on",
+      "hosts": 10000,
+      "workers": 4,
+      "median_qps": 12.389107677550372,
+      "qps_min": 12.380188720975175,
+      "qps_max": 12.406519401450321,
+      "worst_p95_ms": 633.435
+    },
+    {
+      "server": "large",
+      "wal": "off",
+      "hosts": 10000,
+      "workers": 4,
+      "median_qps": 12.014449237976406,
+      "qps_min": 11.974859098824917,
+      "qps_max": 12.031452208401921,
+      "worst_p95_ms": 639.797
+    },
+    {
+      "server": "small",
+      "wal": "on",
+      "hosts": 100000,
+      "workers": 2,
+      "median_qps": 2.6690740481754576,
+      "qps_min": 2.6500436674394274,
+      "qps_max": 2.6897687328282744,
+      "worst_p95_ms": 1587.787
+    },
+    {
+      "server": "small",
+      "wal": "off",
+      "hosts": 100000,
+      "workers": 2,
+      "median_qps": 2.4115514001190634,
+      "qps_min": 2.3864459110186265,
+      "qps_max": 2.490773881706486,
+      "worst_p95_ms": 1771.006
+    },
+    {
+      "server": "medium",
+      "wal": "on",
+      "hosts": 100000,
+      "workers": 2,
+      "median_qps": 4.28861639870036,
+      "qps_min": 4.272774363015683,
+      "qps_max": 4.295191985668895,
+      "worst_p95_ms": 708.733
+    },
+    {
+      "server": "medium",
+      "wal": "off",
+      "hosts": 100000,
+      "workers": 4,
+      "median_qps": 4.731184817641038,
+      "qps_min": 4.727590758189548,
+      "qps_max": 4.810831351082229,
+      "worst_p95_ms": 1907.833
+    },
+    {
+      "server": "large",
+      "wal": "on",
+      "hosts": 100000,
+      "workers": 4,
+      "median_qps": 8.849646636412196,
+      "qps_min": 8.828459756527847,
+      "qps_max": 8.86174552618017,
+      "worst_p95_ms": 1069.448
+    },
+    {
+      "server": "large",
+      "wal": "off",
+      "hosts": 100000,
+      "workers": 4,
+      "median_qps": 7.2468458924343775,
+      "qps_min": 7.244696192650739,
+      "qps_max": 7.272041991068951,
+      "worst_p95_ms": 1272.986
+    }
+  ],
+  "combined": [
+    {
+      "server": "small",
+      "wal": "on",
+      "case": "wal-on-hosts10000-msgpack-evaluation",
+      "measured_pps": 99941.54932263143,
+      "qps": 0.32652587606632794,
+      "worst_type_p95_ms": 2300.421,
+      "final_rows": 81500000,
+      "qualified": true
+    },
+    {
+      "server": "small",
+      "wal": "off",
+      "case": "wal-off-hosts10000-msgpack-evaluation",
+      "measured_pps": 99941.52667097322,
+      "qps": 0.3255360588276087,
+      "worst_type_p95_ms": 2325.76,
+      "final_rows": 81500000,
+      "qualified": true
+    },
+    {
+      "server": "medium",
+      "wal": "on",
+      "case": "wal-on-hosts10000-msgpack-evaluation",
+      "measured_pps": 99941.52517655579,
+      "qps": 0.6235506433562578,
+      "worst_type_p95_ms": 1201.414,
+      "final_rows": 81500000,
+      "qualified": true
+    },
+    {
+      "server": "medium",
+      "wal": "off",
+      "case": "wal-off-hosts10000-msgpack-evaluation",
+      "measured_pps": 99941.58285374331,
+      "qps": 0.6295476177786714,
+      "worst_type_p95_ms": 1190.145,
+      "final_rows": 81500000,
+      "qualified": true
+    },
+    {
+      "server": "large",
+      "wal": "on",
+      "case": "wal-on-hosts10000-msgpack-evaluation",
+      "measured_pps": 99941.59726272932,
+      "qps": 1.2332390241746887,
+      "worst_type_p95_ms": 794.465,
+      "final_rows": 81500000,
+      "qualified": true
+    },
+    {
+      "server": "large",
+      "wal": "off",
+      "case": "wal-off-hosts10000-msgpack-evaluation",
+      "measured_pps": 99941.676869393,
+      "qps": 1.1948427622910585,
+      "worst_type_p95_ms": 775.119,
+      "final_rows": 81500000,
+      "qualified": true
+    }
+  ],
+  "storage": [
+    {
+      "hosts": 10000,
+      "bytes_per_point_min": 26.1700958,
+      "bytes_per_point_max": 26.17078495
+    },
+    {
+      "hosts": 100000,
+      "bytes_per_point_min": 27.57311265,
+      "bytes_per_point_max": 27.5742173
+    }
+  ]
+}
