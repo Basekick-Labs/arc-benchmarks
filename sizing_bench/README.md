@@ -5,6 +5,9 @@ pre-generated HTTP workload approach from `sustained_bench`, with a single,
 identical schema for MessagePack and line protocol. Arc runs natively from the
 released DEB package through systemd.
 
+See [the methodology report](METHODOLOGY.md) for the workload, environment,
+qualification rules, and interpretation of the published sizing figures.
+
 ## Plan
 
 1. Validate the released native package, protocol equivalence, exact seed row
