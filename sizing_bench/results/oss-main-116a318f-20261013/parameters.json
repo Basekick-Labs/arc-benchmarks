@@ -1,0 +1,46 @@
+{
+  "source_commit": "116a318f936c50a6a6dae7ec8132b6617aae2500",
+  "native": true,
+  "region": "us-east-1",
+  "lifecycle": "on-demand",
+  "sequential": true,
+  "sizes": [
+    [
+      4,
+      16
+    ],
+    [
+      8,
+      32
+    ],
+    [
+      16,
+      64
+    ]
+  ],
+  "generator": "c7i.16xlarge",
+  "driver_baseline_gbps": 25,
+  "data_volume_gib": 750,
+  "wal_volume_gib": 250,
+  "volume_iops": 6000,
+  "volume_mibps": 500,
+  "wal_layouts": [
+    "shared",
+    "disabled",
+    "separate"
+  ],
+  "split_scope": "ingestion-only and matched MessagePack resource comparison",
+  "batch_points": 5000,
+  "ingestion_workers": 32,
+  "ingestion_soak_seconds": 600,
+  "candidate_confirmation_repeats": 3,
+  "candidate_soak_fraction": 0.9,
+  "query_seed_points": 20000000,
+  "main_hosts": 10000,
+  "sensitivity_hosts": 100000,
+  "combined_offered_pps": 100000,
+  "combined_main_seconds": 600,
+  "combined_sensitivity_seconds": 180,
+  "generator_transmit_pacing_gbps": 16,
+  "evidence_transfer_kibps": 10000
+}

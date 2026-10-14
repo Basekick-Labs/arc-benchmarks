@@ -1,0 +1,56 @@
+{
+  "project": "native-oss-hardware-sizing",
+  "region": "us-east-1",
+  "version": "26.09.3",
+  "package_url": "https://github.com/basekick-labs/arc/releases/download/v26.09.3/arc_26.09.3_amd64.deb",
+  "package_sha256": "d359ab23ee80aac63fdaaecc0f0588a97ea91c1f087314f9bce64516b48766f2",
+  "os": "Ubuntu 24.04 amd64",
+  "date": "2026-10-12",
+  "driver": {
+    "type": "c7i.4xlarge",
+    "lifecycle": "on-demand"
+  },
+  "servers": [
+    {
+      "name": "small",
+      "type": "m7i.xlarge",
+      "vcpus": 4,
+      "ram_gib": 16,
+      "lifecycle": "on-demand"
+    },
+    {
+      "name": "medium",
+      "type": "m7i.2xlarge",
+      "vcpus": 8,
+      "ram_gib": 32,
+      "lifecycle": "on-demand"
+    },
+    {
+      "name": "large",
+      "type": "m7i.4xlarge",
+      "vcpus": 16,
+      "ram_gib": 64,
+      "lifecycle": "on-demand"
+    }
+  ],
+  "ebs": {
+    "gib": 200,
+    "type": "gp3",
+    "iops": 6000,
+    "throughput_mibps": 500,
+    "encrypted": true
+  },
+  "harness_sha256": {
+    "main.go": "fea715594507ac678e2492a174c214c36f2c0d6c0b770a23f728dc4537a30eb9",
+    "main_test.go": "8e7e0589ad665ab7b3475c18f79e9b1122b351ab29725ec9bd86226ddd451fc3",
+    "go.mod": "39f2327df025c84e3db75303aa88b5d64ebcdfbc6a2f1c43c6a25a2b5f8ccdb8",
+    "go.sum": "44a325aa26bd0edbd675aa3f2768f1403e913519e9e1eee9b6395e3697751664",
+    "controller.py": "8f4602c9c66bbb3f7c08461d8092f9dce6753b04ca96cbc8e3cad5954bf6487c",
+    "evaluation.py": "116888f8b82f6aa634d056c0cea7a145de1c3dd1ce4d36f69801be0dcf46a2a3",
+    "server.py": "24310c5025e09f32a97568b805ff4a79650457d1f55ef357c154fbbaa9b94ff9",
+    "monitor.py": "f4284bc9f366931e578e8ed4d2497ea4ef05add338952e2dbe995f89159840af",
+    "netmon.py": "1a317d324c23bd5591d7f47fe2dccccb4634c77f02694f38dcba73c4eb51092f"
+  },
+  "native_binary_sha256": "c024cbbdd986a76e819f21593dbbfd57eacb25a8e1ad2e96f8912baf80827e18",
+  "complete": true
+}

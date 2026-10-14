@@ -1,0 +1,503 @@
+{
+  "source": {
+    "commit": "116a318f936c50a6a6dae7ec8132b6617aae2500",
+    "version": "main-116a318f936c",
+    "repository": "https://github.com/Basekick-Labs/arc",
+    "build_tags": "duckdb_arrow",
+    "go_version": "1.26.6"
+  },
+  "ingestion": [
+    {
+      "server": "small",
+      "wal": "on",
+      "protocol": "msgpack",
+      "measured_pps": 4021768.812749988,
+      "offered_pps": 4050000,
+      "workers": 32,
+      "seconds": 600.000923064,
+      "acknowledged_rows": 2466420000,
+      "persisted_rows": 2466420000,
+      "drain_seconds": 2.362660230000074
+    },
+    {
+      "server": "small",
+      "wal": "on",
+      "protocol": "lineprotocol",
+      "measured_pps": 561439.5936843804,
+      "offered_pps": 562500,
+      "workers": 32,
+      "seconds": 600.011121035,
+      "acknowledged_rows": 345170000,
+      "persisted_rows": 345170000,
+      "drain_seconds": 3.326072630999988
+    },
+    {
+      "server": "small",
+      "wal": "off",
+      "protocol": "msgpack",
+      "measured_pps": 4917911.628020308,
+      "offered_pps": 4950000,
+      "workers": 32,
+      "seconds": 600.00061473,
+      "acknowledged_rows": 3016480000,
+      "persisted_rows": 3016480000,
+      "drain_seconds": 2.4214029189997746
+    },
+    {
+      "server": "small",
+      "wal": "off",
+      "protocol": "lineprotocol",
+      "measured_pps": 895700.042906905,
+      "offered_pps": 900000,
+      "workers": 32,
+      "seconds": 600.005553484,
+      "acknowledged_rows": 550405000,
+      "persisted_rows": 550405000,
+      "drain_seconds": 2.625991193000118
+    },
+    {
+      "server": "small",
+      "wal": "split",
+      "protocol": "msgpack",
+      "measured_pps": 4444972.766987379,
+      "offered_pps": 4500000,
+      "workers": 32,
+      "seconds": 600.01267495,
+      "acknowledged_rows": 2726540000,
+      "persisted_rows": 2726540000,
+      "drain_seconds": 2.338993751000089
+    },
+    {
+      "server": "small",
+      "wal": "split",
+      "protocol": "lineprotocol",
+      "measured_pps": 561335.1101090695,
+      "offered_pps": 562500,
+      "workers": 32,
+      "seconds": 600.01591551,
+      "acknowledged_rows": 345110000,
+      "persisted_rows": 345110000,
+      "drain_seconds": 3.6164744950001477
+    },
+    {
+      "server": "medium",
+      "wal": "on",
+      "protocol": "msgpack",
+      "measured_pps": 8434295.519230995,
+      "offered_pps": 8550000,
+      "workers": 32,
+      "seconds": 600.001504389,
+      "acknowledged_rows": 5171785000,
+      "persisted_rows": 5171785000,
+      "drain_seconds": 2.375209036999877
+    },
+    {
+      "server": "medium",
+      "wal": "on",
+      "protocol": "lineprotocol",
+      "measured_pps": 1008942.3628266152,
+      "offered_pps": 1012500,
+      "workers": 32,
+      "seconds": 600.019408744,
+      "acknowledged_rows": 619740000,
+      "persisted_rows": 619740000,
+      "drain_seconds": 2.717113884002174
+    },
+    {
+      "server": "medium",
+      "wal": "off",
+      "protocol": "msgpack",
+      "measured_pps": 9783691.40619379,
+      "offered_pps": 9900000,
+      "workers": 32,
+      "seconds": 600.001038083,
+      "acknowledged_rows": 5999910000,
+      "persisted_rows": 5999910000,
+      "drain_seconds": 2.384776294002222
+    },
+    {
+      "server": "medium",
+      "wal": "off",
+      "protocol": "lineprotocol",
+      "measured_pps": 1565681.0349002837,
+      "offered_pps": 1575000,
+      "workers": 32,
+      "seconds": 600.013654799,
+      "acknowledged_rows": 960325000,
+      "persisted_rows": 960325000,
+      "drain_seconds": 2.3097879140004807
+    },
+    {
+      "server": "medium",
+      "wal": "split",
+      "protocol": "msgpack",
+      "measured_pps": 8012299.728731019,
+      "offered_pps": 8100000,
+      "workers": 32,
+      "seconds": 600.011253044,
+      "acknowledged_rows": 4913530000,
+      "persisted_rows": 4913530000,
+      "drain_seconds": 2.354904935000377
+    },
+    {
+      "server": "medium",
+      "wal": "split",
+      "protocol": "lineprotocol",
+      "measured_pps": 1008887.1601777145,
+      "offered_pps": 1012500,
+      "workers": 32,
+      "seconds": 600.017547942,
+      "acknowledged_rows": 619720000,
+      "persisted_rows": 619720000,
+      "drain_seconds": 2.7556026019992714
+    },
+    {
+      "server": "large",
+      "wal": "on",
+      "protocol": "msgpack",
+      "measured_pps": 8150381.117876224,
+      "offered_pps": 8201250,
+      "workers": 32,
+      "seconds": 600.00139003,
+      "acknowledged_rows": 4999630000,
+      "persisted_rows": 4999630000,
+      "drain_seconds": 2.2361428549993434
+    },
+    {
+      "server": "large",
+      "wal": "on",
+      "protocol": "lineprotocol",
+      "measured_pps": 1901096.508458896,
+      "offered_pps": 1912500,
+      "workers": 32,
+      "seconds": 600.024772506,
+      "acknowledged_rows": 1166145000,
+      "persisted_rows": 1166145000,
+      "drain_seconds": 2.125892374999239
+    },
+    {
+      "server": "large",
+      "wal": "off",
+      "protocol": "msgpack",
+      "measured_pps": 18223297.428061526,
+      "offered_pps": 18450000,
+      "workers": 32,
+      "seconds": 600.001182177,
+      "acknowledged_rows": 11177630000,
+      "persisted_rows": 11177630000,
+      "drain_seconds": 2.477452102000825
+    },
+    {
+      "server": "large",
+      "wal": "off",
+      "protocol": "lineprotocol",
+      "measured_pps": 3004019.2161945184,
+      "offered_pps": 3037500,
+      "workers": 32,
+      "seconds": 600.024457328,
+      "acknowledged_rows": 1842420000,
+      "persisted_rows": 1842420000,
+      "drain_seconds": 2.086670477001462
+    },
+    {
+      "server": "large",
+      "wal": "split",
+      "protocol": "msgpack",
+      "measured_pps": 10056648.675456276,
+      "offered_pps": 10125000,
+      "workers": 32,
+      "seconds": 600.001073392,
+      "acknowledged_rows": 6168560000,
+      "persisted_rows": 6168560000,
+      "drain_seconds": 2.245952944002056
+    },
+    {
+      "server": "large",
+      "wal": "split",
+      "protocol": "lineprotocol",
+      "measured_pps": 1900996.1063960944,
+      "offered_pps": 1912500,
+      "workers": 32,
+      "seconds": 600.019640315,
+      "acknowledged_rows": 1166040000,
+      "persisted_rows": 1166040000,
+      "drain_seconds": 2.145666364005592
+    }
+  ],
+  "queries": [
+    {
+      "server": "small",
+      "wal": "on",
+      "hosts": 10000,
+      "workers": 2,
+      "median_qps": 2.8975203143997645,
+      "qps_min": 2.8691606514323635,
+      "qps_max": 2.972238302125007,
+      "worst_p95_ms": 1281.365
+    },
+    {
+      "server": "small",
+      "wal": "on",
+      "hosts": 100000,
+      "workers": 2,
+      "median_qps": 2.318749645816829,
+      "qps_min": 2.2433487340119096,
+      "qps_max": 2.3319530502462555,
+      "worst_p95_ms": 1961.392
+    },
+    {
+      "server": "small",
+      "wal": "off",
+      "hosts": 10000,
+      "workers": 2,
+      "median_qps": 2.954655693835884,
+      "qps_min": 2.9520609751524343,
+      "qps_max": 2.9765595997992307,
+      "worst_p95_ms": 1257.578
+    },
+    {
+      "server": "small",
+      "wal": "off",
+      "hosts": 100000,
+      "workers": 2,
+      "median_qps": 2.3159915680903684,
+      "qps_min": 2.2560778173957123,
+      "qps_max": 2.3174470153533364,
+      "worst_p95_ms": 1892.862
+    },
+    {
+      "server": "medium",
+      "wal": "on",
+      "hosts": 10000,
+      "workers": 4,
+      "median_qps": 5.488192618516622,
+      "qps_min": 5.4327398803583025,
+      "qps_max": 5.5173125696745915,
+      "worst_p95_ms": 1517.63
+    },
+    {
+      "server": "medium",
+      "wal": "on",
+      "hosts": 100000,
+      "workers": 2,
+      "median_qps": 3.8911172238907428,
+      "qps_min": 3.8856793706448256,
+      "qps_max": 3.89778304338669,
+      "worst_p95_ms": 784.273
+    },
+    {
+      "server": "medium",
+      "wal": "off",
+      "hosts": 10000,
+      "workers": 4,
+      "median_qps": 5.420001230103889,
+      "qps_min": 5.3770513154261215,
+      "qps_max": 5.448156851153764,
+      "worst_p95_ms": 1446.065
+    },
+    {
+      "server": "medium",
+      "wal": "off",
+      "hosts": 100000,
+      "workers": 2,
+      "median_qps": 3.8966542762580745,
+      "qps_min": 3.786917657079397,
+      "qps_max": 3.897425367557729,
+      "worst_p95_ms": 855.873
+    },
+    {
+      "server": "large",
+      "wal": "on",
+      "hosts": 10000,
+      "workers": 4,
+      "median_qps": 10.944624265430617,
+      "qps_min": 10.902100302537317,
+      "qps_max": 10.966626001290972,
+      "worst_p95_ms": 707.694
+    },
+    {
+      "server": "large",
+      "wal": "on",
+      "hosts": 100000,
+      "workers": 4,
+      "median_qps": 7.790552967888908,
+      "qps_min": 7.755551245855832,
+      "qps_max": 7.897478097279362,
+      "worst_p95_ms": 1178.452
+    },
+    {
+      "server": "large",
+      "wal": "off",
+      "hosts": 10000,
+      "workers": 4,
+      "median_qps": 10.886689272117394,
+      "qps_min": 10.852736367846784,
+      "qps_max": 10.93244185063573,
+      "worst_p95_ms": 697.049
+    },
+    {
+      "server": "large",
+      "wal": "off",
+      "hosts": 100000,
+      "workers": 4,
+      "median_qps": 7.793980920432772,
+      "qps_min": 7.669696345519645,
+      "qps_max": 7.875488686146794,
+      "worst_p95_ms": 1235.05
+    }
+  ],
+  "combined": [
+    {
+      "server": "small",
+      "wal": "on",
+      "measured_pps": 99999.91651240304,
+      "qps": 0.2891109232579194,
+      "worst_type_p95_ms": 2561.217,
+      "final_rows": 81500000,
+      "case": "wal-on-hosts10000-msgpack-evaluation"
+    },
+    {
+      "server": "small",
+      "wal": "off",
+      "measured_pps": 99999.7877206173,
+      "qps": 0.2948792869903457,
+      "worst_type_p95_ms": 2548.089,
+      "final_rows": 81500000,
+      "case": "wal-off-hosts10000-msgpack-evaluation"
+    },
+    {
+      "server": "medium",
+      "wal": "on",
+      "measured_pps": 99999.84537640575,
+      "qps": 0.547909940920686,
+      "worst_type_p95_ms": 1380.96,
+      "final_rows": 81500000,
+      "case": "wal-on-hosts10000-msgpack-evaluation"
+    },
+    {
+      "server": "medium",
+      "wal": "off",
+      "measured_pps": 99999.85970769681,
+      "qps": 0.5411272088532902,
+      "worst_type_p95_ms": 1372.717,
+      "final_rows": 81500000,
+      "case": "wal-off-hosts10000-msgpack-evaluation"
+    },
+    {
+      "server": "large",
+      "wal": "on",
+      "measured_pps": 99999.9559186861,
+      "qps": 1.0938144162860604,
+      "worst_type_p95_ms": 716.982,
+      "final_rows": 81500000,
+      "case": "wal-on-hosts10000-msgpack-evaluation"
+    },
+    {
+      "server": "large",
+      "wal": "off",
+      "measured_pps": 99999.86768467506,
+      "qps": 1.088032424946093,
+      "worst_type_p95_ms": 719.508,
+      "final_rows": 81500000,
+      "case": "wal-off-hosts10000-msgpack-evaluation"
+    }
+  ],
+  "storage": [
+    {
+      "server": "small",
+      "wal": "on",
+      "hosts": 10000,
+      "rows": 20000000,
+      "bytes": 523504067,
+      "bytes_per_point": 26.17520335
+    },
+    {
+      "server": "small",
+      "wal": "on",
+      "hosts": 100000,
+      "rows": 20000000,
+      "bytes": 551589090,
+      "bytes_per_point": 27.5794545
+    },
+    {
+      "server": "small",
+      "wal": "off",
+      "hosts": 10000,
+      "rows": 20000000,
+      "bytes": 523479395,
+      "bytes_per_point": 26.17396975
+    },
+    {
+      "server": "small",
+      "wal": "off",
+      "hosts": 100000,
+      "rows": 20000000,
+      "bytes": 551562075,
+      "bytes_per_point": 27.57810375
+    },
+    {
+      "server": "medium",
+      "wal": "on",
+      "hosts": 10000,
+      "rows": 20000000,
+      "bytes": 523565958,
+      "bytes_per_point": 26.1782979
+    },
+    {
+      "server": "medium",
+      "wal": "on",
+      "hosts": 100000,
+      "rows": 20000000,
+      "bytes": 551552294,
+      "bytes_per_point": 27.5776147
+    },
+    {
+      "server": "medium",
+      "wal": "off",
+      "hosts": 10000,
+      "rows": 20000000,
+      "bytes": 523560314,
+      "bytes_per_point": 26.1780157
+    },
+    {
+      "server": "medium",
+      "wal": "off",
+      "hosts": 100000,
+      "rows": 20000000,
+      "bytes": 551556606,
+      "bytes_per_point": 27.5778303
+    },
+    {
+      "server": "large",
+      "wal": "on",
+      "hosts": 10000,
+      "rows": 20000000,
+      "bytes": 523484297,
+      "bytes_per_point": 26.17421485
+    },
+    {
+      "server": "large",
+      "wal": "on",
+      "hosts": 100000,
+      "rows": 20000000,
+      "bytes": 551583428,
+      "bytes_per_point": 27.5791714
+    },
+    {
+      "server": "large",
+      "wal": "off",
+      "hosts": 10000,
+      "rows": 20000000,
+      "bytes": 523498115,
+      "bytes_per_point": 26.17490575
+    },
+    {
+      "server": "large",
+      "wal": "off",
+      "hosts": 100000,
+      "rows": 20000000,
+      "bytes": 551556380,
+      "bytes_per_point": 27.577819
+    }
+  ]
+}

@@ -1,0 +1,1487 @@
+[
+  {
+    "server": "small",
+    "instance_type": "m7i.xlarge",
+    "wal": "on",
+    "label": "Shared disk",
+    "case": "wal-on-msgpack-ingest-soak",
+    "offered_pps": 4050000,
+    "measured_pps": 4021768.812749988,
+    "resources": {
+      "samples": 120,
+      "coverage_seconds": 595.0221998691559,
+      "complete_window": true,
+      "rss_mib": {
+        "min": 1928.8203125,
+        "median": 2893.7265625,
+        "p95": 3272.12109375,
+        "max": 3449.53515625
+      },
+      "host_busy_pct": {
+        "min": 63.70106761565836,
+        "median": 72.81011961163136,
+        "p95": 77.16455696202532,
+        "max": 80.13245033112582
+      },
+      "host_iowait_pct": {
+        "min": 8.463476070528968,
+        "median": 13.60060985817192,
+        "p95": 15.853658536585366,
+        "max": 17.831813576494426
+      },
+      "mem_available_gib": {
+        "min": 11.350112915039062,
+        "median": 11.882522583007812,
+        "p95": 12.325309753417969,
+        "max": 12.541603088378906
+      },
+      "disk_write_mibps": {
+        "min": 165.54296875,
+        "median": 193.84375,
+        "p95": 624.015625,
+        "max": 981.55859375
+      },
+      "disk_read_mibps": {
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.78125
+      },
+      "disk_write_await_ms": {
+        "min": 2.14,
+        "median": 2.34,
+        "p95": 4.88,
+        "max": 11.38
+      },
+      "arc_buffer_queue_depth": {
+        "first": 0.0,
+        "last": 0.0,
+        "max": 0.0
+      },
+      "arc_buffer_records_buffered": {
+        "first": 650000.0,
+        "last": 1335000.0,
+        "max": 4955000.0
+      },
+      "arc_buffer_deferred_buffers": {
+        "first": 0.0,
+        "last": 0.0,
+        "max": 0.0
+      },
+      "disk_devices": {
+        "nvme0n1": {
+          "wkB/s": {
+            "median": 198496.0,
+            "p95": 638992.0,
+            "max": 1005116.0
+          },
+          "rkB/s": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 800.0
+          },
+          "w_await": {
+            "median": 2.34,
+            "p95": 4.88,
+            "max": 11.38
+          },
+          "r_await": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 1.69
+          },
+          "%util": {
+            "median": 78.4,
+            "p95": 90.3,
+            "max": 95.5
+          }
+        },
+        "nvme1n1": {
+          "wkB/s": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 0.0
+          },
+          "rkB/s": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 0.0
+          },
+          "w_await": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 0.0
+          },
+          "r_await": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 0.0
+          },
+          "%util": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 0.0
+          }
+        }
+      }
+    },
+    "generator_resources": {
+      "samples": 120,
+      "coverage_seconds": 596.3683240413666,
+      "complete_window": true,
+      "rss_mib": {
+        "min": 136.07421875,
+        "median": 158.98828125,
+        "p95": 173.47265625,
+        "max": 179.9296875
+      },
+      "host_busy_pct": {
+        "min": 0.1686182669789227,
+        "median": 0.2624507904767856,
+        "p95": 0.3154869744486787,
+        "max": 0.3872700584028233
+      },
+      "host_iowait_pct": {
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0031245117950320263,
+        "max": 0.009372364022618639
+      },
+      "disk_devices": {}
+    },
+    "network": {
+      "samples": 122,
+      "coverage_seconds": 605.4413154125214,
+      "complete_window": true,
+      "allowance_counter_deltas": {
+        "enp39s0": {
+          "bw_in_allowance_exceeded": 171,
+          "bw_out_allowance_exceeded": 0,
+          "pps_allowance_exceeded": 0,
+          "conntrack_allowance_exceeded": 0,
+          "linklocal_allowance_exceeded": 0
+        }
+      }
+    }
+  },
+  {
+    "server": "small",
+    "instance_type": "m7i.xlarge",
+    "wal": "split",
+    "label": "Separate disk",
+    "case": "wal-split-msgpack-matched-shared-ingest",
+    "offered_pps": 4050000,
+    "measured_pps": 4022233.1298889928,
+    "resources": {
+      "samples": 120,
+      "coverage_seconds": 595.0376789569855,
+      "complete_window": true,
+      "rss_mib": {
+        "min": 1804.90234375,
+        "median": 2826.240234375,
+        "p95": 3294.38671875,
+        "max": 3908.8671875
+      },
+      "host_busy_pct": {
+        "min": 64.26395939086295,
+        "median": 73.62806779097362,
+        "p95": 80.27522935779817,
+        "max": 89.08362543815724
+      },
+      "host_iowait_pct": {
+        "min": 5.207811717576365,
+        "median": 13.177309425630114,
+        "p95": 14.792299898682877,
+        "max": 16.06507371631927
+      },
+      "mem_available_gib": {
+        "min": 11.264915466308594,
+        "median": 11.954383850097656,
+        "p95": 12.375,
+        "max": 12.730941772460938
+      },
+      "disk_write_mibps": {
+        "min": 80.8671875,
+        "median": 193.896484375,
+        "p95": 556.77734375,
+        "max": 637.765625
+      },
+      "disk_read_mibps": {
+        "min": 0.0,
+        "median": 0.00390625,
+        "p95": 0.0078125,
+        "max": 0.1640625
+      },
+      "disk_write_await_ms": {
+        "min": 2.12,
+        "median": 2.35,
+        "p95": 3.57,
+        "max": 9.13
+      },
+      "arc_buffer_queue_depth": {
+        "first": 0.0,
+        "last": 0.0,
+        "max": 0.0
+      },
+      "arc_buffer_records_buffered": {
+        "first": 2220000.0,
+        "last": 3660000.0,
+        "max": 4875000.0
+      },
+      "arc_buffer_deferred_buffers": {
+        "first": 0.0,
+        "last": 0.0,
+        "max": 0.0
+      },
+      "disk_devices": {
+        "nvme0n1": {
+          "wkB/s": {
+            "median": 0.0,
+            "p95": 369520.0,
+            "max": 458300.0
+          },
+          "rkB/s": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 160.0
+          },
+          "w_await": {
+            "median": 0.0,
+            "p95": 3.57,
+            "max": 9.13
+          },
+          "r_await": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 0.57
+          },
+          "%util": {
+            "median": 0.0,
+            "p95": 29.8,
+            "max": 50.0
+          }
+        },
+        "nvme1n1": {
+          "wkB/s": {
+            "median": 198144.0,
+            "p95": 202140.0,
+            "max": 203208.0
+          },
+          "rkB/s": {
+            "median": 4.0,
+            "p95": 8.0,
+            "max": 12.0
+          },
+          "w_await": {
+            "median": 2.335,
+            "p95": 2.43,
+            "max": 2.54
+          },
+          "r_await": {
+            "median": 1.0,
+            "p95": 1.0,
+            "max": 2.0
+          },
+          "%util": {
+            "median": 79.3,
+            "p95": 89.9,
+            "max": 93.3
+          }
+        }
+      }
+    },
+    "generator_resources": {
+      "samples": 120,
+      "coverage_seconds": 596.3651332855225,
+      "complete_window": true,
+      "rss_mib": {
+        "min": 136.19140625,
+        "median": 159.375,
+        "p95": 173.7265625,
+        "max": 179.79296875
+      },
+      "host_busy_pct": {
+        "min": 0.15614752818462885,
+        "median": 0.25618995554170165,
+        "p95": 0.3843990249390587,
+        "max": 0.45619297587801527
+      },
+      "host_iowait_pct": {
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.003124609423822022,
+        "max": 0.009374121176139737
+      },
+      "disk_devices": {}
+    },
+    "network": {
+      "samples": 122,
+      "coverage_seconds": 605.4912827014923,
+      "complete_window": true,
+      "allowance_counter_deltas": {
+        "enp39s0": {
+          "bw_in_allowance_exceeded": 0,
+          "bw_out_allowance_exceeded": 0,
+          "pps_allowance_exceeded": 0,
+          "conntrack_allowance_exceeded": 0,
+          "linklocal_allowance_exceeded": 0
+        }
+      }
+    }
+  },
+  {
+    "server": "small",
+    "instance_type": "m7i.xlarge",
+    "wal": "off",
+    "label": "Disabled",
+    "case": "wal-off-msgpack-matched-wal-on-ingest",
+    "offered_pps": 4050000,
+    "measured_pps": 4026221.002714106,
+    "resources": {
+      "samples": 120,
+      "coverage_seconds": 595.0201416015625,
+      "complete_window": true,
+      "rss_mib": {
+        "min": 1260.734375,
+        "median": 2054.828125,
+        "p95": 2667.078125,
+        "max": 3044.2734375
+      },
+      "host_busy_pct": {
+        "min": 52.65822784810127,
+        "median": 59.7567156614293,
+        "p95": 70.70095814422592,
+        "max": 79.57425240750126
+      },
+      "host_iowait_pct": {
+        "min": 0.0,
+        "median": 0.050748544246910145,
+        "p95": 5.098435133770823,
+        "max": 6.007067137809187
+      },
+      "mem_available_gib": {
+        "min": 11.532508850097656,
+        "median": 12.539873123168945,
+        "p95": 13.023147583007812,
+        "max": 13.609268188476562
+      },
+      "disk_write_mibps": {
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 493.50390625,
+        "max": 968.125
+      },
+      "disk_read_mibps": {
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0703125
+      },
+      "disk_write_await_ms": {
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 4.59,
+        "max": 10.69
+      },
+      "arc_buffer_queue_depth": {
+        "first": 0.0,
+        "last": 0.0,
+        "max": 0.0
+      },
+      "arc_buffer_records_buffered": {
+        "first": 165000.0,
+        "last": 4080000.0,
+        "max": 4875000.0
+      },
+      "arc_buffer_deferred_buffers": {
+        "first": 0.0,
+        "last": 0.0,
+        "max": 0.0
+      },
+      "disk_devices": {
+        "nvme0n1": {
+          "wkB/s": {
+            "median": 0.0,
+            "p95": 505348.0,
+            "max": 991360.0
+          },
+          "rkB/s": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 72.0
+          },
+          "w_await": {
+            "median": 0.0,
+            "p95": 4.59,
+            "max": 10.69
+          },
+          "r_await": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 1.0
+          },
+          "%util": {
+            "median": 0.0,
+            "p95": 35.2,
+            "max": 95.5
+          }
+        },
+        "nvme1n1": {
+          "wkB/s": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 0.0
+          },
+          "rkB/s": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 0.0
+          },
+          "w_await": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 0.0
+          },
+          "r_await": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 0.0
+          },
+          "%util": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 0.0
+          }
+        }
+      }
+    },
+    "generator_resources": {
+      "samples": 120,
+      "coverage_seconds": 596.3809812068939,
+      "complete_window": true,
+      "rss_mib": {
+        "min": 138.48828125,
+        "median": 158.271484375,
+        "p95": 173.890625,
+        "max": 184.87890625
+      },
+      "host_busy_pct": {
+        "min": 0.16863406408094436,
+        "median": 0.2562419924377363,
+        "p95": 0.41243555694422745,
+        "max": 0.4873933826975349
+      },
+      "host_iowait_pct": {
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.003125097659301853,
+        "max": 0.006250195318603706
+      },
+      "disk_devices": {}
+    },
+    "network": {
+      "samples": 122,
+      "coverage_seconds": 605.3798842430115,
+      "complete_window": true,
+      "allowance_counter_deltas": {
+        "enp39s0": {
+          "bw_in_allowance_exceeded": 0,
+          "bw_out_allowance_exceeded": 0,
+          "pps_allowance_exceeded": 0,
+          "conntrack_allowance_exceeded": 0,
+          "linklocal_allowance_exceeded": 0
+        }
+      }
+    }
+  },
+  {
+    "server": "medium",
+    "instance_type": "m7i.2xlarge",
+    "wal": "on",
+    "label": "Shared disk",
+    "case": "wal-on-msgpack-ingest-soak",
+    "offered_pps": 8550000,
+    "measured_pps": 8434295.519230995,
+    "resources": {
+      "samples": 120,
+      "coverage_seconds": 595.0239794254303,
+      "complete_window": true,
+      "rss_mib": {
+        "min": 5396.05859375,
+        "median": 7112.83203125,
+        "p95": 8301.97265625,
+        "max": 8635.4375
+      },
+      "host_busy_pct": {
+        "min": 56.10619469026549,
+        "median": 79.7880659851159,
+        "p95": 83.22760720629282,
+        "max": 84.75302419354838
+      },
+      "host_iowait_pct": {
+        "min": 4.6075949367088604,
+        "median": 6.496374786291691,
+        "p95": 11.49949341438703,
+        "max": 17.795753286147622
+      },
+      "mem_available_gib": {
+        "min": 21.665050506591797,
+        "median": 23.014816284179688,
+        "p95": 23.99099349975586,
+        "max": 24.907344818115234
+      },
+      "disk_write_mibps": {
+        "min": 384.5703125,
+        "median": 500.453125,
+        "p95": 687.921875,
+        "max": 866.143251953125
+      },
+      "disk_read_mibps": {
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0234375,
+        "max": 1.546875
+      },
+      "disk_write_await_ms": {
+        "min": 2.59,
+        "median": 11.96,
+        "p95": 12.99,
+        "max": 13.17
+      },
+      "arc_buffer_queue_depth": {
+        "first": 0.0,
+        "last": 0.0,
+        "max": 0.0
+      },
+      "arc_buffer_records_buffered": {
+        "first": 820000.0,
+        "last": 3000000.0,
+        "max": 4935000.0
+      },
+      "arc_buffer_deferred_buffers": {
+        "first": 0.0,
+        "last": 0.0,
+        "max": 0.0
+      },
+      "disk_devices": {
+        "nvme0n1": {
+          "wkB/s": {
+            "median": 512464.0,
+            "p95": 704432.0,
+            "max": 886930.69
+          },
+          "rkB/s": {
+            "median": 0.0,
+            "p95": 24.0,
+            "max": 1584.0
+          },
+          "w_await": {
+            "median": 11.96,
+            "p95": 12.99,
+            "max": 13.17
+          },
+          "r_await": {
+            "median": 0.0,
+            "p95": 5.36,
+            "max": 27.0
+          },
+          "%util": {
+            "median": 90.65,
+            "p95": 96.6,
+            "max": 97.5
+          }
+        },
+        "nvme1n1": {
+          "wkB/s": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 0.0
+          },
+          "rkB/s": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 0.0
+          },
+          "w_await": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 0.0
+          },
+          "r_await": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 0.0
+          },
+          "%util": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 0.0
+          }
+        }
+      }
+    },
+    "generator_resources": {
+      "samples": 120,
+      "coverage_seconds": 596.3857839107513,
+      "complete_window": true,
+      "rss_mib": {
+        "min": 139.48046875,
+        "median": 189.087890625,
+        "p95": 235.0390625,
+        "max": 235.8359375
+      },
+      "host_busy_pct": {
+        "min": 0.3125586047383884,
+        "median": 0.46294124188935115,
+        "p95": 0.6567425569176882,
+        "max": 0.7193344592481391
+      },
+      "host_iowait_pct": {
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0031281281281281283,
+        "max": 0.006254691018263698
+      },
+      "disk_devices": {}
+    },
+    "network": {
+      "samples": 122,
+      "coverage_seconds": 605.4732377529144,
+      "complete_window": true,
+      "allowance_counter_deltas": {
+        "enp39s0": {
+          "bw_in_allowance_exceeded": 125,
+          "bw_out_allowance_exceeded": 0,
+          "pps_allowance_exceeded": 0,
+          "conntrack_allowance_exceeded": 0,
+          "linklocal_allowance_exceeded": 0
+        }
+      }
+    }
+  },
+  {
+    "server": "medium",
+    "instance_type": "m7i.2xlarge",
+    "wal": "split",
+    "label": "Separate disk",
+    "case": "wal-split-msgpack-matched-shared-ingest",
+    "offered_pps": 8550000,
+    "measured_pps": 8393243.803372625,
+    "resources": {
+      "samples": 120,
+      "coverage_seconds": 595.0275552272797,
+      "complete_window": true,
+      "rss_mib": {
+        "min": 4445.01171875,
+        "median": 6604.1484375,
+        "p95": 7454.3515625,
+        "max": 7914.3203125
+      },
+      "host_busy_pct": {
+        "min": 67.7452229299363,
+        "median": 81.25314081569022,
+        "p95": 85.5592022216612,
+        "max": 90.27812578301177
+      },
+      "host_iowait_pct": {
+        "min": 3.482836381859183,
+        "median": 6.306302389986101,
+        "p95": 7.066869300911854,
+        "max": 8.379746835443038
+      },
+      "mem_available_gib": {
+        "min": 22.340442657470703,
+        "median": 23.502967834472656,
+        "p95": 24.43804168701172,
+        "max": 25.218151092529297
+      },
+      "disk_write_mibps": {
+        "min": 218.57421875,
+        "median": 402.013671875,
+        "p95": 1010.3125,
+        "max": 1055.45703125
+      },
+      "disk_read_mibps": {
+        "min": 0.0,
+        "median": 0.01171875,
+        "p95": 0.0234375,
+        "max": 0.29296875
+      },
+      "disk_write_await_ms": {
+        "min": 2.35,
+        "median": 2.8,
+        "p95": 3.23,
+        "max": 3.77
+      },
+      "arc_buffer_queue_depth": {
+        "first": 0.0,
+        "last": 0.0,
+        "max": 0.0
+      },
+      "arc_buffer_records_buffered": {
+        "first": 2335000.0,
+        "last": 2845000.0,
+        "max": 4995000.0
+      },
+      "arc_buffer_deferred_buffers": {
+        "first": 0.0,
+        "last": 0.0,
+        "max": 0.0
+      },
+      "disk_devices": {
+        "nvme0n1": {
+          "wkB/s": {
+            "median": 0.0,
+            "p95": 628460.0,
+            "max": 673624.0
+          },
+          "rkB/s": {
+            "median": 0.0,
+            "p95": 12.0,
+            "max": 284.0
+          },
+          "w_await": {
+            "median": 0.0,
+            "p95": 3.23,
+            "max": 3.77
+          },
+          "r_await": {
+            "median": 0.0,
+            "p95": 1.0,
+            "max": 1.5
+          },
+          "%util": {
+            "median": 0.0,
+            "p95": 41.1,
+            "max": 48.8
+          }
+        },
+        "nvme1n1": {
+          "wkB/s": {
+            "median": 408012.0,
+            "p95": 421116.0,
+            "max": 426992.0
+          },
+          "rkB/s": {
+            "median": 12.0,
+            "p95": 16.0,
+            "max": 16.0
+          },
+          "w_await": {
+            "median": 2.79,
+            "p95": 2.89,
+            "max": 2.92
+          },
+          "r_await": {
+            "median": 0.75,
+            "p95": 1.33,
+            "max": 2.0
+          },
+          "%util": {
+            "median": 79.5,
+            "p95": 86.5,
+            "max": 92.0
+          }
+        }
+      }
+    },
+    "generator_resources": {
+      "samples": 120,
+      "coverage_seconds": 596.3734560012817,
+      "complete_window": true,
+      "rss_mib": {
+        "min": 138.38671875,
+        "median": 186.109375,
+        "p95": 233.015625,
+        "max": 233.7734375
+      },
+      "host_busy_pct": {
+        "min": 0.3125195324707794,
+        "median": 0.4629340006255865,
+        "p95": 0.7413199874882702,
+        "max": 0.803853492227331
+      },
+      "host_iowait_pct": {
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0031281281281281283,
+        "max": 0.006255082254331645
+      },
+      "disk_devices": {}
+    },
+    "network": {
+      "samples": 122,
+      "coverage_seconds": 605.5034031867981,
+      "complete_window": true,
+      "allowance_counter_deltas": {
+        "enp39s0": {
+          "bw_in_allowance_exceeded": 0,
+          "bw_out_allowance_exceeded": 0,
+          "pps_allowance_exceeded": 0,
+          "conntrack_allowance_exceeded": 0,
+          "linklocal_allowance_exceeded": 0
+        }
+      }
+    }
+  },
+  {
+    "server": "medium",
+    "instance_type": "m7i.2xlarge",
+    "wal": "off",
+    "label": "Disabled",
+    "case": "wal-off-msgpack-matched-wal-on-ingest",
+    "offered_pps": 8550000,
+    "measured_pps": 8494976.428068615,
+    "resources": {
+      "samples": 120,
+      "coverage_seconds": 595.0172753334045,
+      "complete_window": true,
+      "rss_mib": {
+        "min": 2506.62109375,
+        "median": 4606.14453125,
+        "p95": 5343.83984375,
+        "max": 5805.09765625
+      },
+      "host_busy_pct": {
+        "min": 49.30397367754999,
+        "median": 66.12633335475655,
+        "p95": 70.078342178418,
+        "max": 75.53865652724969
+      },
+      "host_iowait_pct": {
+        "min": 0.0,
+        "median": 0.07612283107395387,
+        "p95": 5.313765182186235,
+        "max": 6.4507968631419175
+      },
+      "mem_available_gib": {
+        "min": 24.27499008178711,
+        "median": 25.316368103027344,
+        "p95": 25.933223724365234,
+        "max": 26.298236846923828
+      },
+      "disk_write_mibps": {
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 603.93359375,
+        "max": 988.828125
+      },
+      "disk_read_mibps": {
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.07421875
+      },
+      "disk_write_await_ms": {
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 10.66,
+        "max": 10.69
+      },
+      "arc_buffer_queue_depth": {
+        "first": 0.0,
+        "last": 0.0,
+        "max": 0.0
+      },
+      "arc_buffer_records_buffered": {
+        "first": 935000.0,
+        "last": 3635000.0,
+        "max": 4940000.0
+      },
+      "arc_buffer_deferred_buffers": {
+        "first": 0.0,
+        "last": 0.0,
+        "max": 0.0
+      },
+      "disk_devices": {
+        "nvme0n1": {
+          "wkB/s": {
+            "median": 0.0,
+            "p95": 618428.0,
+            "max": 1012560.0
+          },
+          "rkB/s": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 76.0
+          },
+          "w_await": {
+            "median": 0.0,
+            "p95": 10.66,
+            "max": 10.69
+          },
+          "r_await": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 8.0
+          },
+          "%util": {
+            "median": 0.0,
+            "p95": 95.2,
+            "max": 96.5
+          }
+        },
+        "nvme1n1": {
+          "wkB/s": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 0.0
+          },
+          "rkB/s": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 0.0
+          },
+          "w_await": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 0.0
+          },
+          "r_await": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 0.0
+          },
+          "%util": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 0.0
+          }
+        }
+      }
+    },
+    "generator_resources": {
+      "samples": 120,
+      "coverage_seconds": 596.384829044342,
+      "complete_window": true,
+      "rss_mib": {
+        "min": 137.41015625,
+        "median": 186.6171875,
+        "p95": 231.2265625,
+        "max": 231.9609375
+      },
+      "host_busy_pct": {
+        "min": 0.31876992312019503,
+        "median": 0.4598636055304393,
+        "p95": 0.688145136065061,
+        "max": 0.7946439744712802
+      },
+      "host_iowait_pct": {
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0031278346001063465,
+        "max": 0.006257234927885367
+      },
+      "disk_devices": {}
+    },
+    "network": {
+      "samples": 122,
+      "coverage_seconds": 605.3887882232666,
+      "complete_window": true,
+      "allowance_counter_deltas": {
+        "enp39s0": {
+          "bw_in_allowance_exceeded": 0,
+          "bw_out_allowance_exceeded": 0,
+          "pps_allowance_exceeded": 0,
+          "conntrack_allowance_exceeded": 0,
+          "linklocal_allowance_exceeded": 0
+        }
+      }
+    }
+  },
+  {
+    "server": "large",
+    "instance_type": "m7i.4xlarge",
+    "wal": "on",
+    "label": "Shared disk",
+    "case": "wal-on-msgpack-ingest-soak-retry3",
+    "offered_pps": 8201250,
+    "measured_pps": 8150381.117876224,
+    "resources": {
+      "samples": 120,
+      "coverage_seconds": 595.0143754482269,
+      "complete_window": true,
+      "rss_mib": {
+        "min": 2745.71484375,
+        "median": 3442.328125,
+        "p95": 4062.65234375,
+        "max": 4338.171875
+      },
+      "host_busy_pct": {
+        "min": 29.451104100946374,
+        "median": 32.091065360385365,
+        "p95": 33.568459503715836,
+        "max": 34.22581459964638
+      },
+      "host_iowait_pct": {
+        "min": 5.98560424295997,
+        "median": 6.946360481034211,
+        "p95": 7.810920121334681,
+        "max": 7.932904527683188
+      },
+      "mem_available_gib": {
+        "min": 55.52277755737305,
+        "median": 56.821847915649414,
+        "p95": 57.38667297363281,
+        "max": 59.16741943359375
+      },
+      "disk_write_mibps": {
+        "min": 311.91796875,
+        "median": 389.591796875,
+        "p95": 942.671875,
+        "max": 993.0703125
+      },
+      "disk_read_mibps": {
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 1.08203125
+      },
+      "disk_write_await_ms": {
+        "min": 2.45,
+        "median": 2.7,
+        "p95": 13.03,
+        "max": 13.7
+      },
+      "arc_buffer_queue_depth": {
+        "first": 0.0,
+        "last": 0.0,
+        "max": 0.0
+      },
+      "arc_buffer_records_buffered": {
+        "first": 720000.0,
+        "last": 1370000.0,
+        "max": 4925000.0
+      },
+      "arc_buffer_deferred_buffers": {
+        "first": 0.0,
+        "last": 0.0,
+        "max": 0.0
+      },
+      "disk_devices": {
+        "nvme0n1": {
+          "wkB/s": {
+            "median": 398942.0,
+            "p95": 965296.0,
+            "max": 1016904.0
+          },
+          "rkB/s": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 1108.0
+          },
+          "w_await": {
+            "median": 2.7,
+            "p95": 13.03,
+            "max": 13.7
+          },
+          "r_await": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 4.85
+          },
+          "%util": {
+            "median": 90.05,
+            "p95": 96.1,
+            "max": 97.2
+          }
+        },
+        "nvme1n1": {
+          "wkB/s": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 0.0
+          },
+          "rkB/s": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 0.0
+          },
+          "w_await": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 0.0
+          },
+          "r_await": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 0.0
+          },
+          "%util": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 0.0
+          }
+        }
+      }
+    },
+    "generator_resources": {
+      "samples": 119,
+      "coverage_seconds": 591.3796200752258,
+      "complete_window": true,
+      "rss_mib": {
+        "min": 140.83203125,
+        "median": 188.35546875,
+        "p95": 213.36328125,
+        "max": 228.625
+      },
+      "host_busy_pct": {
+        "min": 0.3717820544863784,
+        "median": 0.4846021572612162,
+        "p95": 0.80040020010005,
+        "max": 0.8631203677643307
+      },
+      "host_iowait_pct": {
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0031267588018260273,
+        "max": 0.006254495418582106
+      },
+      "disk_devices": {}
+    },
+    "network": {
+      "samples": 122,
+      "coverage_seconds": 605.275467634201,
+      "complete_window": true,
+      "allowance_counter_deltas": {
+        "enp39s0": {
+          "bw_in_allowance_exceeded": 207,
+          "bw_out_allowance_exceeded": 0,
+          "pps_allowance_exceeded": 0,
+          "conntrack_allowance_exceeded": 0,
+          "linklocal_allowance_exceeded": 0
+        }
+      }
+    }
+  },
+  {
+    "server": "large",
+    "instance_type": "m7i.4xlarge",
+    "wal": "split",
+    "label": "Separate disk",
+    "case": "wal-split-msgpack-matched-shared-ingest",
+    "offered_pps": 8201250,
+    "measured_pps": 8151156.631083242,
+    "resources": {
+      "samples": 120,
+      "coverage_seconds": 595.0223925113678,
+      "complete_window": true,
+      "rss_mib": {
+        "min": 2772.40625,
+        "median": 3382.15234375,
+        "p95": 4007.93359375,
+        "max": 4352.203125
+      },
+      "host_busy_pct": {
+        "min": 29.95461422087746,
+        "median": 32.42611742618274,
+        "p95": 33.70673379483952,
+        "max": 37.907006208032435
+      },
+      "host_iowait_pct": {
+        "min": 5.710691823899371,
+        "median": 6.309660512628649,
+        "p95": 7.4732199117832385,
+        "max": 7.803650094398993
+      },
+      "mem_available_gib": {
+        "min": 55.58842849731445,
+        "median": 56.888418197631836,
+        "p95": 57.478389739990234,
+        "max": 59.32133483886719
+      },
+      "disk_write_mibps": {
+        "min": 260.35546875,
+        "median": 388.931640625,
+        "p95": 909.8046875,
+        "max": 1384.6015625
+      },
+      "disk_read_mibps": {
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 4.35546875
+      },
+      "disk_write_await_ms": {
+        "min": 2.48,
+        "median": 2.7,
+        "p95": 10.56,
+        "max": 10.72
+      },
+      "arc_buffer_queue_depth": {
+        "first": 0.0,
+        "last": 0.0,
+        "max": 0.0
+      },
+      "arc_buffer_records_buffered": {
+        "first": 1090000.0,
+        "last": 2500000.0,
+        "max": 4835000.0
+      },
+      "arc_buffer_deferred_buffers": {
+        "first": 0.0,
+        "last": 0.0,
+        "max": 0.0
+      },
+      "disk_devices": {
+        "nvme0n1": {
+          "wkB/s": {
+            "median": 0.0,
+            "p95": 654392.0,
+            "max": 1022724.0
+          },
+          "rkB/s": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 4460.0
+          },
+          "w_await": {
+            "median": 0.0,
+            "p95": 10.56,
+            "max": 10.72
+          },
+          "r_await": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 1.36
+          },
+          "%util": {
+            "median": 0.0,
+            "p95": 65.6,
+            "max": 91.2
+          }
+        },
+        "nvme1n1": {
+          "wkB/s": {
+            "median": 396784.0,
+            "p95": 399444.0,
+            "max": 404708.0
+          },
+          "rkB/s": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 0.0
+          },
+          "w_await": {
+            "median": 2.68,
+            "p95": 2.72,
+            "max": 2.75
+          },
+          "r_await": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 0.0
+          },
+          "%util": {
+            "median": 89.5,
+            "p95": 91.7,
+            "max": 93.4
+          }
+        }
+      }
+    },
+    "generator_resources": {
+      "samples": 120,
+      "coverage_seconds": 596.3879528045654,
+      "complete_window": true,
+      "rss_mib": {
+        "min": 140.65234375,
+        "median": 188.01171875,
+        "p95": 211.96875,
+        "max": 230.95703125
+      },
+      "host_busy_pct": {
+        "min": 0.33751054720460016,
+        "median": 0.47992727573027505,
+        "p95": 0.9067600525295478,
+        "max": 0.9787367104440275
+      },
+      "host_iowait_pct": {
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0031269543464665416,
+        "max": 0.0062541042559179465
+      },
+      "disk_devices": {}
+    },
+    "network": {
+      "samples": 122,
+      "coverage_seconds": 605.2733564376831,
+      "complete_window": true,
+      "allowance_counter_deltas": {
+        "enp39s0": {
+          "bw_in_allowance_exceeded": 0,
+          "bw_out_allowance_exceeded": 0,
+          "pps_allowance_exceeded": 0,
+          "conntrack_allowance_exceeded": 0,
+          "linklocal_allowance_exceeded": 0
+        }
+      }
+    }
+  },
+  {
+    "server": "large",
+    "instance_type": "m7i.4xlarge",
+    "wal": "off",
+    "label": "Disabled",
+    "case": "wal-off-msgpack-matched-wal-on-ingest",
+    "offered_pps": 8201250,
+    "measured_pps": 8153195.969275918,
+    "resources": {
+      "samples": 120,
+      "coverage_seconds": 595.0161056518555,
+      "complete_window": true,
+      "rss_mib": {
+        "min": 2093.03515625,
+        "median": 3081.572265625,
+        "p95": 3619.0703125,
+        "max": 3996.02734375
+      },
+      "host_busy_pct": {
+        "min": 20.671867136386513,
+        "median": 26.1390204618449,
+        "p95": 28.129324443326205,
+        "max": 30.896256145216185
+      },
+      "host_iowait_pct": {
+        "min": 0.0,
+        "median": 0.5036831852743243,
+        "p95": 0.5917904809871569,
+        "max": 0.7824331145885917
+      },
+      "mem_available_gib": {
+        "min": 56.09786605834961,
+        "median": 57.054771423339844,
+        "p95": 57.4532470703125,
+        "max": 57.73343276977539
+      },
+      "disk_write_mibps": {
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 641.57421875,
+        "max": 671.51171875
+      },
+      "disk_read_mibps": {
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.05078125
+      },
+      "disk_write_await_ms": {
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 3.23,
+        "max": 6.14
+      },
+      "arc_buffer_queue_depth": {
+        "first": 0.0,
+        "last": 0.0,
+        "max": 0.0
+      },
+      "arc_buffer_records_buffered": {
+        "first": 1295000.0,
+        "last": 0.0,
+        "max": 4990000.0
+      },
+      "arc_buffer_deferred_buffers": {
+        "first": 0.0,
+        "last": 0.0,
+        "max": 0.0
+      },
+      "disk_devices": {
+        "nvme0n1": {
+          "wkB/s": {
+            "median": 0.0,
+            "p95": 656972.0,
+            "max": 687628.0
+          },
+          "rkB/s": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 52.0
+          },
+          "w_await": {
+            "median": 0.0,
+            "p95": 3.23,
+            "max": 6.14
+          },
+          "r_await": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 1.0
+          },
+          "%util": {
+            "median": 0.0,
+            "p95": 41.2,
+            "max": 47.8
+          }
+        },
+        "nvme1n1": {
+          "wkB/s": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 0.0
+          },
+          "rkB/s": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 0.0
+          },
+          "w_await": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 0.0
+          },
+          "r_await": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 0.0
+          },
+          "%util": {
+            "median": 0.0,
+            "p95": 0.0,
+            "max": 0.0
+          }
+        }
+      }
+    },
+    "generator_resources": {
+      "samples": 120,
+      "coverage_seconds": 596.4003553390503,
+      "complete_window": true,
+      "rss_mib": {
+        "min": 137.66796875,
+        "median": 184.734375,
+        "p95": 212.19140625,
+        "max": 229.84375
+      },
+      "host_busy_pct": {
+        "min": 0.33121894822360404,
+        "median": 0.4845870072891256,
+        "p95": 0.9035767883941971,
+        "max": 0.928734482003815
+      },
+      "host_iowait_pct": {
+        "min": 0.0,
+        "median": 0.0,
+        "p95": 0.0031270521279589732,
+        "max": 0.006254691018263698
+      },
+      "disk_devices": {}
+    },
+    "network": {
+      "samples": 122,
+      "coverage_seconds": 605.2774565219879,
+      "complete_window": true,
+      "allowance_counter_deltas": {
+        "enp39s0": {
+          "bw_in_allowance_exceeded": 754,
+          "bw_out_allowance_exceeded": 0,
+          "pps_allowance_exceeded": 0,
+          "conntrack_allowance_exceeded": 0,
+          "linklocal_allowance_exceeded": 0
+        }
+      }
+    }
+  }
+]
