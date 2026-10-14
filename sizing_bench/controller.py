@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Run reproducible native OSS sizing cases from the dedicated load generator."""
-import argparse, concurrent.futures, datetime, json, os, pathlib, statistics, subprocess, time, urllib.error, urllib.request
+import argparse, concurrent.futures, datetime, fcntl, json, os, pathlib, statistics, subprocess, time, urllib.error, urllib.request
 
 BASE=pathlib.Path.home()
 TOKEN=(BASE/'token').read_text().strip()
@@ -34,6 +34,19 @@ def count(host,database):
 def save(path,value):
     path.write_text(json.dumps(value,indent=2)+'\n')
 
+def generator_network():
+    counters={}
+    for path in pathlib.Path('/sys/class/net').iterdir():
+        if path.name=='lo' or not (path/'device').exists():continue
+        result=subprocess.run(['ethtool','-S',path.name],capture_output=True,text=True,timeout=5)
+        if result.returncode:raise RuntimeError('cannot read generator ENA counters')
+        for line in result.stdout.splitlines():
+            if '_allowance_exceeded:' in line:
+                key,value=line.strip().split(':',1)
+                counters[path.name+'.'+key]=int(value.strip())
+    if not counters:raise RuntimeError('generator ENA counters missing')
+    return counters
+
 class Campaign:
     def __init__(self,args):
         self.a=args;self.root=BASE/'results'/args.name;self.root.mkdir(parents=True,exist_ok=True)
@@ -56,17 +69,20 @@ class Campaign:
         if history: command+=['--history']
         if queries: command+=['--queries',str(queries)]
         before=metrics(self.a.host)
+        network_before=generator_network()
         self.log('stage_start',label=label,mode=mode,protocol=protocol,workers=workers,rate=rate,duration=duration,hosts=hosts)
         stream=(self.root/(label+'.log')).open('w')
         proc=subprocess.Popen(command,env=ENV,stdout=stream,stderr=subprocess.STDOUT)
-        task=(proc,stream,output,before)
+        task=(proc,stream,output,before,network_before)
         return self.finish(task,label,mode,database) if wait else task
 
     def finish(self,task,label,mode,database):
-        proc,stream,output,before=task
+        proc,stream,output,before,network_before=task
         code=proc.wait();stream.close()
         if code!=0: raise RuntimeError(f'{label} failed with exit {code}: '+(self.root/(label+'.log')).read_text()[-2000:])
         result=json.loads(output.read_text())
+        network_after=generator_network()
+        result['generator_network_allowance_deltas']={k:network_after[k]-v for k,v in network_before.items()}
         after=metrics(self.a.host)
         result['server_metrics_before']=before;result['server_metrics_after']=after
         if mode=='query':
@@ -88,16 +104,72 @@ class Campaign:
             result['persisted_rows']=persisted if persisted>=0 else count(self.a.host,database)
             result['persistence_validated']=result['persisted_rows']==expected
             result['data_bytes']=int(remote(self.a.host,'sudo','du','-sb','/srv/arc/working/data').split()[0])
-            result['wal_bytes']=int(remote(self.a.host,'sudo','du','-sb','/srv/arc/working/wal').split()[0]) if self.wal else 0
+            result['wal_directory']=getattr(self,'wal_path','/srv/arc/working/wal') if self.wal else None
+            result['wal_bytes']=int(remote(self.a.host,'sudo','du','-sb',result['wal_directory']).split()[0]) if self.wal else 0
         save(output,result)
         self.log('stage_end',label=label,records_per_second=result['records_per_second'],queries_per_second=result['requests_per_second'] if mode=='query' else None,errors=result['errors'],validated=result.get('persistence_validated'),drain_seconds=result.get('drain_seconds'),latencies=result['latencies'])
         return result
 
     def ingestion_valid(self,result,target,max_drain):
         before=result['server_metrics_before'];after=result['server_metrics_drained']
-        counters=['arc_buffer_flush_failures_total','arc_wal_dropped_entries_total','arc_wal_failed_writes_total','arc_ingest_flush_deferred_total','arc_storage_errors_total']
+        counters=['arc_buffer_flush_failures_total','arc_wal_dropped_entries_total','arc_wal_failed_writes_total','arc_wal_failed_syncs_total','arc_ingest_flush_deferred_total','arc_storage_errors_total']
         clean=all(after.get(key,0)==before.get(key,0) for key in counters)
-        return clean and result['errors']==0 and result['persistence_validated'] and result['drain_seconds']<max_drain and result['records_per_second']>=target*.95 and result['seconds']>=result['config']['Duration']*.95
+        network_clean=not any(result.get('generator_network_allowance_deltas',{}).values())
+        return clean and network_clean and result.get('errors_including_warmup',result['errors'])==0 and result['persistence_validated'] and result['drain_seconds']<max_drain and result['records_per_second']>=target*.95 and result['seconds']>=result['config']['Duration']*.95
+
+    def qualify_capacity(self,tag,protocol):
+        steps=([1000000,2000000,3000000,4000000,4500000,5000000,5500000,6000000,7000000,8000000,9000000,10000000,12000000,14000000,16000000,20000000,24000000]
+            if protocol=='msgpack' else [100000,250000,500000,750000,1000000,1250000,1500000,1750000,2000000,2500000,3000000,4000000,5000000,6000000,8000000])
+        workers=self.a.ingest_workers
+        best=0;failed=None;trials=[]
+        def trial(rate,label):
+            self.control('reset')
+            try:
+                result=self.stage(label,database='ingest',protocol=protocol,workers=workers,duration=self.a.sweep_seconds,rate=rate)
+            except Exception as exc:
+                self.log('trial_failed',label=label,error=str(exc))
+                trials.append({'rate':rate,'case':label,'valid':False,'error':str(exc)})
+                return False
+            valid=self.ingestion_valid(result,rate,15)
+            trials.append({'rate':rate,'case':label,'valid':valid})
+            if any(result['generator_network_allowance_deltas'].values()):
+                raise RuntimeError('generator network throttled; capacity selection is invalid')
+            return valid
+        for rate in steps:
+            if not trial(rate,f'{tag}-{protocol}-paced-{rate}'):
+                failed=rate;self.log('capacity_boundary',wal=self.wal,protocol=protocol,offered_rate=rate);break
+            best=rate
+        increment=500000 if protocol=='msgpack' else 125000
+        if failed and best:
+            for rate in range(best+increment,failed,increment):
+                if not trial(rate,f'{tag}-{protocol}-refine-{rate}'):break
+                best=rate
+        if not best:raise RuntimeError('lowest offered rate failed qualification')
+        # Repeat the SAME rate three times. If it fails, lower by one fine step
+        # and restart all confirmations rather than mixing different candidates.
+        while best>0:
+            outcomes=[trial(best,f'{tag}-{protocol}-confirm-{best}-r{i}') for i in range(self.a.repeats)]
+            if all(outcomes):break
+            best-=increment
+        if best<=0:raise RuntimeError('no confirmed capacity')
+        target=int(best*.90)
+        for attempt in range(10):
+            self.control('reset')
+            label=f'{tag}-{protocol}-ingest-soak'+(f'-retry{attempt}' if attempt else '')
+            try:
+                result=self.stage(label,database='ingest',protocol=protocol,workers=workers,duration=self.a.soak_seconds,warmup=15,rate=target)
+            except Exception as exc:
+                self.log('soak_failed',label=label,error=str(exc))
+                target=int(target*.90)
+                continue
+            if any(result['generator_network_allowance_deltas'].values()):
+                raise RuntimeError('generator network throttled during sustained qualification')
+            if self.ingestion_valid(result,target,15):
+                return {'workers':workers,'confirmed_rate':best,'target_rps':target,'soak':result,'trials':trials,'selection':'fine-step selection, three identical confirmations, 90% offered soak'}
+            new_target=int(target*.90)
+            self.log('reducing_ingestion_rate',wal=self.wal,protocol=protocol,old_target=target,new_target=new_target)
+            target=new_target
+        raise RuntimeError('no valid ten-minute operating point')
 
     def query_file(self,hosts):
         anchor=datetime.datetime.fromtimestamp(self.anchor/1e6,datetime.timezone.utc)
@@ -113,7 +185,7 @@ class Campaign:
     def main(self):
         self.log('campaign_start',config=vars(self.a),anchor=self.anchor)
         (self.root/'server-info.txt').write_text(remote(self.a.host,'sudo','python3','/srv/arc/server.py','info'))
-        (self.root/'package.sha256').write_text(remote(self.a.host,'sudo','cat','/srv/arc/results/package.sha256'))
+        (self.root/'binary.sha256').write_text(remote(self.a.host,'sudo','cat','/srv/arc/results/binary.sha256'))
         for wal in [True,False]:
             self.wal=wal;tag='wal-on' if wal else 'wal-off'
             self.control('wal',str(wal).lower());self.control('reset')
@@ -125,47 +197,7 @@ class Campaign:
                     self.log('resume_protocol',wal=wal,protocol=protocol)
                     continue
                 self.anchor=int(time.time()*1e6)
-                steps=[250000,500000,1000000,2000000,4000000,6000000,8000000] if protocol=='msgpack' else [100000,250000,500000,1000000,2000000,4000000]
-                best_rate=0
-                for rate in steps:
-                    self.control('reset')
-                    label=f'{tag}-{protocol}-paced-{rate}'
-                    try:
-                        r=self.stage(label,database='ingest',protocol=protocol,workers=8,duration=self.a.sweep_seconds,rate=rate)
-                        valid=self.ingestion_valid(r,rate,15)
-                    except Exception as exc:
-                        self.log('ramp_failed',label=label,error=str(exc));valid=False
-                    if not valid:
-                        self.log('capacity_boundary',wal=wal,protocol=protocol,offered_rate=rate)
-                        break
-                    best_rate=rate
-                if not best_rate:best_rate=steps[0]//2
-                # Confirm the highest acceptable offered rate, resetting the
-                # disposable database between repetitions to bound memory.
-                for repeat in range(self.a.repeats):
-                    self.control('reset')
-                    label=f'{tag}-{protocol}-confirm-r{repeat}'
-                    try:
-                        r=self.stage(label,database='ingest',protocol=protocol,workers=8,duration=self.a.sweep_seconds,rate=best_rate)
-                        valid=self.ingestion_valid(r,best_rate,15)
-                    except Exception as exc:
-                        self.log('confirmation_failed',label=label,error=str(exc));valid=False
-                    if not valid:best_rate//=2
-                target=int(best_rate*.70)
-                self.control('reset')
-                label=f'{tag}-{protocol}-ingest-soak'
-                for attempt in range(6):
-                    soak_label=label if attempt==0 else label+f'-retry{attempt}'
-                    try:
-                        r=self.stage(soak_label,database='ingest',protocol=protocol,workers=8,duration=self.a.soak_seconds,warmup=15,rate=target)
-                        valid=self.ingestion_valid(r,target,15)
-                    except Exception as exc:
-                        self.log('soak_failed',label=soak_label,error=str(exc));valid=False;r={'error':str(exc)}
-                    if valid:break
-                    self.log('reducing_ingestion_rate',protocol=protocol,wal=wal,old_target=target,new_target=target//2)
-                    target//=2;self.control('reset')
-                else:raise RuntimeError('no valid sustained ingestion rate for '+tag+' '+protocol)
-                capacities[protocol]={'workers':8,'confirmed_rate':best_rate,'target_rps':target,'soak':r}
+                capacities[protocol]=self.qualify_capacity(tag,protocol)
                 save(checkpoint,capacities[protocol])
                 self.control('reset')
             save(self.root/(tag+'-capacities.json'),capacities)
@@ -177,7 +209,7 @@ class Campaign:
                 self.anchor=int(time.time()*1e6)
                 self.control('reset')
                 label=f'{tag}-hosts{hosts}-seed'
-                seed=self.stage(label,database='sizing',hosts=hosts,duration=900,warmup=0,max_records=self.a.seed_records,history=True,workers=8)
+                seed=self.stage(label,database='sizing',hosts=hosts,duration=900,warmup=0,max_records=self.a.seed_records,history=True,workers=self.a.ingest_workers)
                 # Seed validation has no previous rows, unlike a mixed stage.
                 seed['persistence_validated']=seed['persisted_rows']==self.a.seed_records
                 save(self.root/(label+'-sizing.json'),seed)
@@ -203,11 +235,11 @@ class Campaign:
                     for repeat in range(self.a.repeats):
                         label=f'{tag}-hosts{hosts}-query-w{workers}-r{repeat}'
                         r=self.stage(label,mode='query',workers=workers,duration=self.a.query_seconds,warmup=5,queries=queries)
-                        if r['errors']==0 and max(v['p95_ms'] for v in r['latencies'].values())<=2000:rates.append(r['requests_per_second'])
-                    if rates:q_candidates[workers]=statistics.median(rates)
+                        if r.get('errors_including_warmup',r['errors'])==0 and not any(r.get('generator_network_allowance_deltas',{}).values()) and r['seconds']>=self.a.query_seconds*.95 and max(v['p95_ms'] for v in r['latencies'].values())<=2000:rates.append(r['requests_per_second'])
+                    if len(rates)==self.a.repeats:q_candidates[workers]=statistics.median(rates)
                 if not q_candidates:
                     self.log('no_query_candidate_below_2s',hosts=hosts,wal=wal)
-                    q_candidates={1:.5}
+                    raise RuntimeError(f'{tag} {hosts}-host query profile did not qualify')
                 q_workers=max(q_candidates,key=q_candidates.get);q_target=q_candidates[q_workers]*.25
                 save(self.root/f'{tag}-hosts{hosts}-query-capacity.json',{'qps_by_workers':q_candidates,'mixed_target_qps':q_target,'workers':q_workers})
                 protocols=['msgpack','lineprotocol'] if hosts==10000 else ['msgpack']
@@ -220,7 +252,7 @@ class Campaign:
                     label=f'{tag}-hosts{hosts}-{protocol}-mixed'
                     duration=self.a.soak_seconds if hosts==10000 else self.a.sensitivity_seconds
                     qtask=self.stage(label+'-queries',mode='query',workers=max(4,q_workers),duration=duration,warmup=15,rate=q_target,queries=queries,wait=False)
-                    itask=self.stage(label+'-ingest',workers=8,duration=duration,warmup=15,rate=mixed_rate,protocol=protocol,hosts=hosts,wait=False)
+                    itask=self.stage(label+'-ingest',workers=self.a.ingest_workers,duration=duration,warmup=15,rate=mixed_rate,protocol=protocol,hosts=hosts,wait=False)
                     qr=self.finish(qtask,label+'-queries','query','sizing')
                     ir=self.finish(itask,label+'-ingest','ingest','sizing')
                     save(self.root/(label+'-summary.json'),{'queries':qr,'ingestion':ir,'target_qps':q_target,'target_rps':mixed_rate})
@@ -240,7 +272,11 @@ if __name__=='__main__':
     parser.add_argument('--query-seconds',type=int,default=30)
     parser.add_argument('--repeats',type=int,default=3)
     parser.add_argument('--mixed-rate',type=int,default=100000)
+    parser.add_argument('--ingest-workers',type=int,default=32)
     args=parser.parse_args()
+    lockdir=BASE/'results'/args.name;lockdir.mkdir(parents=True,exist_ok=True)
+    lock=(lockdir/'controller.lock').open('w')
+    fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
     campaign=Campaign(args)
     try:campaign.main()
     except Exception as exc:

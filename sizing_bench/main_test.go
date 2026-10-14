@@ -1,11 +1,53 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/Basekick-Labs/msgpack/v6"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
+	"time"
 )
+
+func TestPacedQueryStopsAtMeasurementDeadline(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{"data":[[1]]}`)
+	}))
+	defer server.Close()
+	dir := t.TempDir()
+	queries := filepath.Join(dir, "queries.json")
+	output := filepath.Join(dir, "result.json")
+	if err := os.WriteFile(queries, []byte(`[{"name":"one","sql":"SELECT 1"}]`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, filepath.Join(runtime.GOROOT(), "bin", "go"), "run", ".", "--mode=query", "--host="+strings.TrimPrefix(server.URL, "http://"), "--queries="+queries, "--output="+output, "--duration=1", "--warmup=0", "--workers=4", "--rate=1")
+	if logs, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("client: %v\n%s", err, logs)
+	}
+	data, err := os.ReadFile(output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var result Result
+	if err := json.Unmarshal(data, &result); err != nil {
+		t.Fatal(err)
+	}
+	// Four paced workers have a four-second individual period. The run must
+	// stop at its one-second boundary, rather than waiting for those periods.
+	if result.Seconds < 1 || result.Seconds > 1.75 || result.Requests != 1 || result.AllErrors != 0 {
+		t.Fatalf("unexpected deadline result: seconds=%v requests=%v errors=%v", result.Seconds, result.Requests, result.AllErrors)
+	}
+}
 
 func TestHistorySpansTheWholeDay(t *testing.T) {
 	cfg := Config{Protocol: "msgpack", Batch: 32, Hosts: 10000, Anchor: 1791817200000000, Seed: 42, History: true, MaxRecords: 32000}

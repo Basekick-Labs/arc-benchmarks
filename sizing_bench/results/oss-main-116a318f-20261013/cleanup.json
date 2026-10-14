@@ -1,0 +1,20 @@
+{
+  "project": "arc-oss-sizing-20261013",
+  "region": "us-east-1",
+  "checked_utc": "2026-10-14 03:59:29 UTC",
+  "instances": [
+    {
+      "id": "i-0c4ebcbb44a783636",
+      "type": "m7i.4xlarge",
+      "state": "terminated"
+    },
+    {
+      "id": "i-04563ebdd466d1b4e",
+      "type": "c7i.16xlarge",
+      "state": "terminated"
+    }
+  ],
+  "remaining_volumes": [],
+  "remaining_security_groups": [],
+  "remaining_key_pairs": []
+}

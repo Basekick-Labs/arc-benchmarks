@@ -5,6 +5,7 @@ from controller import Campaign, api, save
 
 def main(args):
     args.anchor=0
+    args.ingest_workers=32
     campaign=Campaign(args)
     for wal in [True,False]:
         campaign.wal=wal;tag='wal-on' if wal else 'wal-off'
@@ -22,31 +23,15 @@ def main(args):
             # the same MessagePack offered rate as the validated WAL-on soak.
             enabled=json.loads((campaign.root/'wal-on-msgpack-validated-capacity.json').read_text())
             disabled=json.loads((campaign.root/'wal-off-msgpack-validated-capacity.json').read_text())
-            # A near-boundary final confirmation can trigger the primary
-            # campaign's coarse halving fallback. Recheck the prior clean
-            # offered step instead of interpreting that fallback as a ceiling.
-            if disabled['target_rps']<enabled['target_rps']:
-                candidate=4000000
-                repeats=[]
-                for repeat in range(3):
-                    campaign.control('wal','false')
-                    result=campaign.stage(f'wal-off-msgpack-reference4000000-confirm-r{repeat}',database='ingest',workers=8,duration=30,warmup=5,rate=candidate)
-                    repeats.append(campaign.ingestion_valid(result,candidate,15))
-                if all(repeats):
-                    campaign.control('wal','false')
-                    result=campaign.stage('wal-off-msgpack-reference4000000-soak',database='ingest',workers=8,duration=args.soak_seconds,warmup=15,rate=candidate)
-                    if campaign.ingestion_valid(result,candidate,15):
-                        save(campaign.root/'wal-off-msgpack-initial-capacity.json',disabled)
-                        disabled={'workers':8,'confirmed_rate':candidate,'target_rps':candidate,'soak':result,'selection':'additional fixed-rate qualification after coarse fallback'}
-                        save(campaign.root/'wal-off-msgpack-validated-capacity.json',disabled)
             match_label='wal-off-msgpack-matched-wal-on-ingest'
             match_file=campaign.root/(match_label+'.json')
-            if enabled['target_rps']!=disabled['target_rps'] and not match_file.exists():
+            match_valid=match_file.exists() and campaign.ingestion_valid(json.loads(match_file.read_text()),enabled['target_rps'],15)
+            if enabled['target_rps']!=disabled['target_rps'] and not match_valid:
                 campaign.control('wal','false')
-                matched=campaign.stage(match_label,database='ingest',workers=8,duration=args.soak_seconds,warmup=15,rate=enabled['target_rps'])
+                matched=campaign.stage(match_label,database='ingest',workers=args.ingest_workers,duration=args.soak_seconds,warmup=15,rate=enabled['target_rps'])
                 campaign.log('matched_wal_comparison',qualified=campaign.ingestion_valid(matched,enabled['target_rps'],15),offered_rate=enabled['target_rps'])
         campaign.control('wal',str(wal).lower())
-        seed=campaign.stage(label+'-seed',hosts=10000,duration=900,warmup=0,max_records=args.seed_records,history=True,workers=8)
+        seed=campaign.stage(label+'-seed',hosts=10000,duration=900,warmup=0,max_records=args.seed_records,history=True,workers=args.ingest_workers)
         if not seed['persistence_validated']:raise RuntimeError('evaluation seed mismatch')
         try:save(campaign.root/(label+'-compaction.json'),api(args.host,'/api/v1/compaction/trigger?database=sizing',method='POST'))
         except Exception as exc:campaign.log('evaluation_compaction_error',error=str(exc))
@@ -64,15 +49,16 @@ def main(args):
             campaign.control('restore')
             run_label=label if attempt==0 else label+f'-retry{attempt}'
             qtask=campaign.stage(run_label+'-queries',mode='query',workers=4,duration=args.soak_seconds,warmup=15,rate=target_qps,queries=queries,wait=False)
-            itask=campaign.stage(run_label+'-ingest',workers=8,duration=args.soak_seconds,warmup=15,rate=target_rps,wait=False)
+            itask=campaign.stage(run_label+'-ingest',workers=args.ingest_workers,duration=args.soak_seconds,warmup=15,rate=target_rps,wait=False)
             qr=campaign.finish(qtask,run_label+'-queries','query','sizing')
             ir=campaign.finish(itask,run_label+'-ingest','ingest','sizing')
-            qualified=campaign.ingestion_valid(ir,target_rps,15) and qr['errors']==0 and qr['requests_per_second']>=target_qps*.95 and qr['seconds']>=args.soak_seconds*.95
+            qualified=campaign.ingestion_valid(ir,target_rps,15) and qr.get('errors_including_warmup',qr['errors'])==0 and not any(qr.get('generator_network_allowance_deltas',{}).values()) and qr['requests_per_second']>=target_qps*.95 and qr['seconds']>=args.soak_seconds*.95
             summary={'queries':qr,'ingestion':ir,'target_qps':target_qps,'target_rps':target_rps,'qualified':qualified,'selected_case':run_label}
             save(campaign.root/(run_label+'-summary.json'),summary);save(checkpoint,summary)
             if qualified:break
             campaign.log('reducing_evaluation_query_load',wal=wal,old_qps=target_qps,new_qps=target_qps*.5)
             target_qps*=.5
+        if not qualified:raise RuntimeError(f'{tag} combined evaluation did not qualify after three attempts')
     campaign.control('reset')
     campaign.log('evaluation_complete')
     (campaign.root/'EVALUATION-COMPLETE').write_text(time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime())+'\n')

@@ -34,9 +34,9 @@ type Sample struct {
 	CompletedSeconds float64 `json:"completed_seconds"`
 }
 type WorkerStats struct {
-	Samples                                                []Sample
-	Records, Bytes, Errors, Requests, Missed, Acknowledged int64
-	ErrorExamples                                          []string
+	Samples                                                           []Sample
+	Records, Bytes, Errors, Requests, Missed, Acknowledged, AllErrors int64
+	ErrorExamples                                                     []string
 }
 type Query struct {
 	Name string `json:"name"`
@@ -51,6 +51,7 @@ type Result struct {
 	Bytes               int64                         `json:"bytes"`
 	Requests            int64                         `json:"requests"`
 	Errors              int64                         `json:"errors"`
+	AllErrors           int64                         `json:"errors_including_warmup"`
 	Missed              int64                         `json:"missed_schedule_slots"`
 	RecordsPerSecond    float64                       `json:"records_per_second"`
 	RequestsPerSecond   float64                       `json:"requests_per_second"`
@@ -199,7 +200,11 @@ func main() {
 			for time.Now().Before(end) && errorCount.Load() < 100 {
 				if period > 0 {
 					if time.Now().Before(next) {
-						time.Sleep(time.Until(next))
+						wake := next
+						if end.Before(wake) {
+							wake = end
+						}
+						time.Sleep(time.Until(wake))
 					}
 					if !time.Now().Before(end) {
 						break
@@ -267,6 +272,13 @@ func main() {
 				if ok && cfg.Mode == "ingest" {
 					s.Acknowledged += int64(cfg.Batch)
 				}
+				if !ok {
+					s.AllErrors++
+					errorCount.Add(1)
+					if len(s.ErrorExamples) < 3 {
+						s.ErrorExamples = append(s.ErrorExamples, message)
+					}
+				}
 				if reqStart.Before(measureStart) {
 					continue
 				}
@@ -282,10 +294,6 @@ func main() {
 					}
 				} else {
 					s.Errors++
-					errorCount.Add(1)
-					if len(s.ErrorExamples) < 3 {
-						s.ErrorExamples = append(s.ErrorExamples, message)
-					}
 				}
 			}
 		}(id)
@@ -312,6 +320,7 @@ func main() {
 		result.Bytes += s.Bytes
 		result.Requests += s.Requests
 		result.Errors += s.Errors
+		result.AllErrors += s.AllErrors
 		result.Missed += s.Missed
 		result.ErrorExamples = append(result.ErrorExamples, s.ErrorExamples...)
 		for _, sample := range s.Samples {

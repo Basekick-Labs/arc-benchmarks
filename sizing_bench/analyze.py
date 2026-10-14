@@ -10,7 +10,7 @@ def percentile(values,q):
     return values[min(len(values)-1,int(q*len(values)))] if values else None
 
 def host_samples(server):
-    files=list((RESULTS/server/'native-host').glob('monitor*.jsonl*'))
+    files=list((RESULTS/server/'native-host').rglob('monitor*.jsonl*'))
     if not files:
         file=RESULTS/server/'monitor.jsonl'
         if file.exists():files=[file]
@@ -40,9 +40,10 @@ def host_samples(server):
             for line in io_lines[headers[-1]+1:]:
                 fields=line.split()
                 if fields and fields[0].startswith('nvme'):
-                    try:devices.append(dict(zip(header[1:],map(float,fields[1:]))))
+                    try:devices.append({'device':fields[0],**dict(zip(header[1:],map(float,fields[1:])))})
                     except ValueError:pass
             if devices:
+                sample['disk_devices']={d['device']:d for d in devices}
                 sample['disk_write_mibps']=sum(d.get('wkB/s',0) for d in devices)/1024
                 sample['disk_read_mibps']=sum(d.get('rkB/s',0) for d in devices)/1024
                 sample['disk_write_await_ms']=max(d.get('w_await',0) for d in devices)
@@ -70,6 +71,26 @@ def host_samples(server):
         samples.append(sample)
     return samples
 
+def driver_samples():
+    files=list(RESULTS.glob('driver-monitor.jsonl*'))
+    samples=[];previous=None
+    for path in files:
+        with (gzip.open(path,'rt') if path.suffix=='.gz' else path.open()) as stream:
+            for line in stream:
+                try:sample=json.loads(line)
+                except ValueError:continue
+                stat=sample.get('cpustat','').splitlines()
+                if not stat:continue
+                values=list(map(int,stat[0].split()[1:9]))
+                if previous:
+                    delta=[a-b for a,b in zip(values,previous)];total=sum(delta)
+                    if total>0:sample['host_busy_pct']=100*(total-delta[3]-delta[4])/total;sample['host_iowait_pct']=100*delta[4]/total
+                previous=values
+                processes=sample.get('process','').splitlines()[1:]
+                sample['rss_mib']=sum(int(row.split()[2])/1024 for row in processes if len(row.split())>=3)
+                samples.append(sample)
+    return samples
+
 def resource_summary(run,samples):
     start=datetime.datetime.fromisoformat(run['started_utc'].replace('Z','+00:00')).timestamp()
     selected=[s for s in samples if start<=s['time']<=start+run['seconds']]
@@ -81,13 +102,19 @@ def resource_summary(run,samples):
         values=[s[key] for s in selected if key in s]
         if values:summary[key]={'min':min(values),'median':statistics.median(values),'p95':percentile(values,.95),'max':max(values)}
     for key in ['arc_buffer_queue_depth','arc_buffer_records_buffered','arc_buffer_deferred_buffers']:
-        values=[s['arc'].get(key,0) for s in selected]
+        values=[s['arc'].get(key,0) for s in selected if 'arc' in s]
         if values:summary[key]={'first':values[0],'last':values[-1],'max':max(values)}
+    summary['disk_devices']={}
+    for device in sorted({d for sample in selected for d in sample.get('disk_devices',{})}):
+        summary['disk_devices'][device]={}
+        for key in ['wkB/s','rkB/s','w_await','r_await','%util']:
+            values=[s['disk_devices'][device][key] for s in selected if device in s.get('disk_devices',{}) and key in s['disk_devices'][device]]
+            if values:summary['disk_devices'][device][key]={'median':statistics.median(values),'p95':percentile(values,.95),'max':max(values)}
     return summary
 
 def network_samples(server):
     samples=[]
-    for path in (RESULTS/server/'native-host').glob('network*.jsonl*'):
+    for path in (RESULTS/server/'native-host').rglob('network*.jsonl*'):
         with (gzip.open(path,'rt') if path.suffix=='.gz' else path.open()) as stream:
             for line in stream:
                 try:samples.append(json.loads(line))
@@ -109,7 +136,8 @@ def network_summary(run,samples):
 
 def usable(run):
     reasons=[]
-    if run.get('errors',0):reasons.append('HTTP errors')
+    if run.get('errors_including_warmup',run.get('errors',0)):reasons.append('HTTP errors')
+    if any(run.get('generator_network_allowance_deltas',{}).values()):reasons.append('generator network allowance exceeded')
     if not run.get('persistence_validated',False):reasons.append('persisted row mismatch')
     # Fixed-count historical seeding finishes as soon as all rows are sent.
     if not run['config'].get('MaxRecords') and run.get('seconds',0)<run['config']['Duration']*.95:reasons.append('ended early')
@@ -117,13 +145,13 @@ def usable(run):
     if target and run['records_per_second']<target*.95:reasons.append('offered rate not sustained')
     if not run['config'].get('MaxRecords') and run.get('drain_seconds',999)>15:reasons.append('slow row reconciliation')
     before=run.get('server_metrics_before',{});after=run.get('server_metrics_drained',run.get('server_metrics_after',{}))
-    for key in ['arc_buffer_flush_failures_total','arc_wal_dropped_entries_total','arc_wal_failed_writes_total','arc_ingest_flush_deferred_total','arc_storage_errors_total']:
+    for key in ['arc_buffer_flush_failures_total','arc_wal_dropped_entries_total','arc_wal_failed_writes_total','arc_wal_failed_syncs_total','arc_ingest_flush_deferred_total','arc_storage_errors_total']:
         if after.get(key,0)>before.get(key,0):reasons.append(key+' increased')
     return reasons
 
 def main(quiet=False):
     config=json.loads((ROOT/'instances.json').read_text())
-    rows=[]
+    rows=[];generator=driver_samples()
     for server in config['servers']:
         samples=host_samples(server['name']);network=network_samples(server['name']);directory=RESULTS/server['name']
         for path in sorted(directory.glob('*.json')):
@@ -134,6 +162,10 @@ def main(quiet=False):
             dataset_hosts=int(host_label.group(1)) if host_label else r['config']['Hosts']
             row={'server':server['name'],'instance_type':server['type'],'vcpus':server['vcpus'],'ram_gib':server['ram_gib'],'case':path.stem,'mode':r['config']['Mode'],'protocol':r['config']['Protocol'] if r['config']['Mode']=='ingest' else 'http-json','wal':'on' if path.name.startswith('wal-on') else 'off','hosts':dataset_hosts,'duration_seconds':r['seconds'],'rps':r['records_per_second'],'qps':r['requests_per_second'] if r['config']['Mode']=='query' else None,'target':r['config']['Rate'],'errors':r['errors'],'latencies':r['latencies'],'resources':resource_summary(r,samples),'minute_windows':r.get('minute_windows',[])}
             row['network']=network_summary(r,network)
+            row['wal']='split' if path.name.startswith('wal-split') else row['wal']
+            row['errors_including_warmup']=r.get('errors_including_warmup',r['errors'])
+            row['generator_network_allowance_deltas']=r.get('generator_network_allowance_deltas',{})
+            row['generator_resources']=resource_summary(r,generator)
             row['payload_mibps']=r.get('bytes',0)/r['seconds']/2**20
             if row['mode']=='ingest':
                 row['invalid_reasons']=usable(r)
@@ -142,7 +174,7 @@ def main(quiet=False):
                 row['data_bytes']=r.get('data_bytes')
                 row['wal_bytes']=r.get('wal_bytes')
                 row['acknowledged_rows']=r.get('acknowledged_records_including_warmup')
-                row['counter_deltas']={key:r.get('server_metrics_drained',{}).get(key,0)-r.get('server_metrics_before',{}).get(key,0) for key in ['arc_buffer_flush_failures_total','arc_wal_dropped_entries_total','arc_wal_failed_writes_total','arc_ingest_flush_deferred_total','arc_storage_errors_total']}
+                row['counter_deltas']={key:r.get('server_metrics_drained',{}).get(key,0)-r.get('server_metrics_before',{}).get(key,0) for key in ['arc_buffer_flush_failures_total','arc_wal_dropped_entries_total','arc_wal_failed_writes_total','arc_wal_failed_syncs_total','arc_ingest_flush_deferred_total','arc_storage_errors_total']}
                 full_windows=[w for w in r.get('minute_windows',[]) if w['end_seconds']-w['start_seconds']>=60]
                 row['minimum_full_minute_rps']=min((w['records_per_second'] for w in full_windows),default=None)
                 # Only unique historical data can estimate retention storage.
@@ -150,7 +182,8 @@ def main(quiet=False):
                     row['unique_seed_bytes_per_row']=r.get('data_bytes',0)/r['persisted_rows']
             else:
                 row['invalid_reasons']=[]
-                if r['errors']:row['invalid_reasons'].append('HTTP errors')
+                if r.get('errors_including_warmup',r['errors']):row['invalid_reasons'].append('HTTP errors')
+                if any(r.get('generator_network_allowance_deltas',{}).values()):row['invalid_reasons'].append('generator network allowance exceeded')
                 if r['seconds']<r['config']['Duration']*.95:row['invalid_reasons'].append('ended early')
                 if row['target'] and row['qps']<row['target']*.95:row['invalid_reasons'].append('offered QPS not sustained')
                 row['worst_type_p95_ms']=max((v['p95_ms'] for v in r['latencies'].values()),default=0)

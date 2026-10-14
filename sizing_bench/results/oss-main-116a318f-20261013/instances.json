@@ -1,0 +1,67 @@
+{
+  "project": "native-oss-hardware-sizing",
+  "region": "us-east-1",
+  "version": "main-116a318f936c",
+  "source": {
+    "commit": "116a318f936c50a6a6dae7ec8132b6617aae2500",
+    "version": "main-116a318f936c",
+    "repository": "https://github.com/Basekick-Labs/arc",
+    "build_tags": "duckdb_arrow",
+    "go_version": "1.26.6"
+  },
+  "source_archive_sha256": "0e075837d54b025dbf9d664fa54d065426e3813f0f43bba691aea11ead4566c6",
+  "os": "Ubuntu 24.04 amd64",
+  "date_start": "2026-10-13",
+  "date_end": "2026-10-14",
+  "driver": {
+    "type": "c7i.16xlarge",
+    "lifecycle": "on-demand"
+  },
+  "servers": [
+    {
+      "name": "small",
+      "type": "m7i.xlarge",
+      "vcpus": 4,
+      "ram_gib": 16,
+      "lifecycle": "on-demand"
+    },
+    {
+      "name": "medium",
+      "type": "m7i.2xlarge",
+      "vcpus": 8,
+      "ram_gib": 32,
+      "lifecycle": "on-demand"
+    },
+    {
+      "name": "large",
+      "type": "m7i.4xlarge",
+      "vcpus": 16,
+      "ram_gib": 64,
+      "lifecycle": "on-demand"
+    }
+  ],
+  "ebs": {
+    "data_gib": 750,
+    "wal_gib": 250,
+    "type": "gp3",
+    "iops_per_volume": 6000,
+    "throughput_mibps_per_volume": 500,
+    "encrypted": true
+  },
+  "harness_sha256": {
+    "main.go": "b71629406005652b136639a311dbf3b30d886fb5c17816344214afa45c2a80dd",
+    "main_test.go": "10fd14d3ff0924a7b386a2f55546a71b4b21b9ef4b1239532a41bceef0819054",
+    "go.mod": "39f2327df025c84e3db75303aa88b5d64ebcdfbc6a2f1c43c6a25a2b5f8ccdb8",
+    "go.sum": "44a325aa26bd0edbd675aa3f2768f1403e913519e9e1eee9b6395e3697751664",
+    "controller.py": "20c82805092f246510f33bef1edd4af94eecaf97080601f293d33d8d94b709bc",
+    "evaluation.py": "02f19655c7282716a76bae7e854a38ac141fe7bc7af54ed04e1ec6044e963a23",
+    "split_wal.py": "effafd83d6ea6abf81229357bf53e6e96c65ac57a2681c46b5a02a159cd90f1d",
+    "pilot.py": "8fea73dd5d93bd6ef93b36cf41e99d0d684602a7fb07aef07e9f83fec3314e7c",
+    "server.py": "2957a927b60aa95db969daee2f1de40220b4d0ef9da89b98b0bea587c102f1e9",
+    "monitor.py": "f4284bc9f366931e578e8ed4d2497ea4ef05add338952e2dbe995f89159840af",
+    "netmon.py": "1a317d324c23bd5591d7f47fe2dccccb4634c77f02694f38dcba73c4eb51092f",
+    "driver_monitor.py": "2441d48faaee55a6d32f176e85bdccb8c8a45145fec1e36681ca2983385b25ce"
+  },
+  "native_binary_sha256": "db87d21c2351b200bb79227deb439fe765c304490b92f0fa6fff8f8e75036e0c",
+  "complete": true
+}

@@ -3,7 +3,7 @@
 import json, os, pathlib, shutil, subprocess, sys, time, urllib.request
 
 ROOT = pathlib.Path('/srv/arc')
-VERSION = '26.09.3'
+VERSION = 'main-116a318f936c'
 
 def run(*args, check=True):
     return subprocess.run(args, text=True, capture_output=True, check=check).stdout
@@ -11,10 +11,19 @@ def run(*args, check=True):
 def stop():
     run('systemctl', 'stop', 'arc')
 
+def clear_working():
+    shutil.rmtree(ROOT/'working', ignore_errors=True)
+    # Only this campaign's WAL subtree is removed, never the mount itself.
+    shutil.rmtree(ROOT/'wal-disk/working', ignore_errors=True)
+
 def start():
     data = ROOT/'working'
     data.mkdir(exist_ok=True)
     run('chown', '-R', 'arc:arc', str(data))
+    environment=(ROOT/'environment').read_text()
+    if 'ARC_WAL_DIRECTORY=/srv/arc/wal-disk/' in environment:
+        wal=ROOT/'wal-disk/working/wal';wal.mkdir(parents=True,exist_ok=True)
+        run('chown','-R','arc:arc',str(ROOT/'wal-disk/working'))
     run('systemctl', 'start', 'arc')
     for _ in range(120):
         try:
@@ -34,6 +43,7 @@ if action == 'configure':
     environment.write_text('\n'.join([
         'ARC_STORAGE_BACKEND=local',
         'ARC_STORAGE_LOCAL_PATH=/srv/arc/working/data',
+        'ARC_BACKUP_LOCAL_PATH=/srv/arc/working/backups',
         'ARC_WAL_ENABLED='+sys.argv[2],
         'ARC_WAL_DIRECTORY=/srv/arc/working/wal',
         'ARC_WAL_SYNC_MODE=fdatasync',
@@ -53,11 +63,20 @@ elif action == 'wal':
     env=ROOT/'environment'
     lines=env.read_text().splitlines()
     env.write_text('\n'.join('ARC_WAL_ENABLED='+sys.argv[2] if line.startswith('ARC_WAL_ENABLED=') else line for line in lines)+'\n')
-    shutil.rmtree(ROOT/'working', ignore_errors=True)
+    clear_working()
     start()
+elif action == 'layout':
+    assert sys.argv[2] in ['shared','split']
+    stop()
+    if sys.argv[2]=='split' and not os.path.ismount(ROOT/'wal-disk'):
+        raise RuntimeError('dedicated WAL disk is not mounted')
+    directory='/srv/arc/wal-disk/working/wal' if sys.argv[2]=='split' else '/srv/arc/working/wal'
+    env=ROOT/'environment';lines=env.read_text().splitlines()
+    env.write_text('\n'.join('ARC_WAL_DIRECTORY='+directory if line.startswith('ARC_WAL_DIRECTORY=') else 'ARC_WAL_ENABLED=true' if line.startswith('ARC_WAL_ENABLED=') else line for line in lines)+'\n')
+    clear_working();start()
 elif action == 'reset':
     stop()
-    shutil.rmtree(ROOT/'working', ignore_errors=True)
+    clear_working()
     start()
 elif action == 'start':
     start()
@@ -73,7 +92,7 @@ elif action == 'restore':
     start()
 elif action == 'info':
     print(run('systemctl', 'show', 'arc', '-p', 'MainPID', '-p', 'NRestarts', '-p', 'MemoryCurrent', '-p', 'CPUUsageNSec'))
-    print(run('dpkg-query', '-W', 'arc'))
+    print((ROOT/'source.json').read_text())
     print(run('sha256sum', '/usr/bin/arc'))
     print(run('lsblk', '-J'))
     print(run('lscpu', '-J'))
