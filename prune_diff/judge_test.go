@@ -170,22 +170,54 @@ func TestSelfTestFlavours(t *testing.T) {
 	}
 }
 
-// A change that moves an expectation without failing the answer is a miss:
-// here a row that only widens the upper bound (in flight at the query) keeps
-// the old answer passing, and the self-test must say so.
-func TestSelfTestReportsAMiss(t *testing.T) {
+// A row in flight at the query only widens the bracket: a correct answer
+// may hold it or not, so the self-test must not require a failure (the live
+// runs' false misses). A settled row moves the answer off its old values and
+// is required.
+func TestSelfTestRequiresOnlyAMoveTheAnswerCannotFollow(t *testing.T) {
 	l := newLedger()
 	l.sent("m0", rowsAt(10, base))
 	j := judge{l: l, lag: 4 * time.Second}
 	q := geQuery(base.Add(2 * time.Minute))
 	send := base.Add(time.Hour)
 	r := rec(l, q, "live", send, j.lag, answer(8, 52, 8, 52))
-	inFlight := l.mutate(func(m string, rs []*row) []*row {
-		return append(rs, &row{seq: 999, tsUs: base.Add(30 * time.Minute).UnixMicro(), sentAt: send.Add(-time.Second)})
+	add := func(at time.Time) *ledger {
+		return l.mutate(func(m string, rs []*row) []*row {
+			return append(rs, &row{seq: 999, tsUs: base.Add(30 * time.Minute).UnixMicro(), sentAt: at, ackedAt: at})
+		})
+	}
+	st := selfTestWith(j, []record{r}, []flavour{{name: "in-flight", l: add(send.Add(-time.Second)), covers: func(string) bool { return false }}})[0]
+	if st.Required != 0 || st.Widened != 1 || st.Missed != 0 {
+		t.Fatalf("an in-flight row is not required to fail: %+v", st)
+	}
+	st = selfTestWith(j, []record{r}, []flavour{{name: "settled", l: add(base), covers: func(string) bool { return true }}})[0]
+	if !st.OK || st.Required != 1 || st.Missed != 0 {
+		t.Fatalf("a settled row must be required and fail: %+v", st)
+	}
+	// A relative window: a row between its earliest and latest start only
+	// widens the bracket.
+	rq := query{kind: kindCountSum, meas: "m0", relative: true, sel: func(now int64) match { return gt(now - 5*60e6) }}
+	rr := rec(l, rq, "frozen", base.Add(9*time.Minute+30*time.Second), 0, answer(5, 40, 5, 40))
+	rr.recv = base.Add(10*time.Minute + 30*time.Second)
+	straddle := l.mutate(func(m string, rs []*row) []*row {
+		return append(rs, &row{seq: -1, tsUs: base.Add(5 * time.Minute).UnixMicro(), sentAt: base, ackedAt: base})
 	})
-	st := selfTestWith(j, []record{r}, []flavour{{"in-flight", inFlight, func(string) bool { return true }}})[0]
-	if st.OK || st.Missed != 1 {
-		t.Fatalf("a moved expectation that still passes must be a miss: %+v", st)
+	st = selfTestWith(j, []record{rr}, []flavour{{name: "straddle", l: straddle, covers: func(string) bool { return false }}})[0]
+	if st.Required != 0 || st.Widened != 1 {
+		t.Fatalf("a row on a relative window's moving edge is not required to fail: %+v", st)
+	}
+}
+
+// A judge that passes what it must fail is reported as a miss.
+func TestSelfTestReportsAMiss(t *testing.T) {
+	l := newLedger()
+	l.sent("m0", rowsAt(10, base))
+	j := judge{l: l, lag: 4 * time.Second}
+	r := rec(l, geQuery(base.Add(2*time.Minute)), "live", base.Add(time.Hour), j.lag, answer(8, 52, 8, 52))
+	blind := func(*ledger, record) verdict { return verdict{status: pass} }
+	st := selfTestWith(j, []record{r}, []flavour{{name: "phantoms", l: l.withHighPhantoms(base, base.Add(time.Hour)), covers: func(string) bool { return true }, judgeWith: blind}})[0]
+	if st.OK || st.Missed != 1 || len(st.MissedFirst) != 1 || st.MissedFirst[0].At == "" {
+		t.Fatalf("a judge that passes a required failure must be a miss: %+v", st)
 	}
 }
 

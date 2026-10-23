@@ -167,6 +167,12 @@ func run(ctx context.Context, c config) int {
 			}
 		}
 	case "live":
+		// The seed's rows on disk before the first query: a measurement
+		// with no file yet answers count(*) with no row at all.
+		if err := rn.barrier(ctx, l, all); err != nil {
+			fmt.Println(err)
+			return 2
+		}
 		ictx, cancel := context.WithTimeout(ctx, c.duration)
 		done := make(chan struct{})
 		go func() { g.run(ictx, ms, heavy, c.interval, c.heavyBatch, c.seed); close(done) }()

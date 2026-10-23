@@ -28,6 +28,9 @@ type selfTestResult struct {
 	OK          bool           `json:"ok"`
 	Required    int            `json:"required_failures"`
 	Missed      int            `json:"missed"`
+	// Widened: judgements the change moved without moving them off their
+	// old values (see cannotFollow); not required to fail.
+	Widened     int            `json:"widened_not_required"`
 	MissedFirst []failure      `json:"missed_first,omitempty"`
 	ByClass     map[string]int `json:"required_by_class"`
 	Note        string         `json:"note,omitempty"`
@@ -164,9 +167,9 @@ func selfTest(j judge, recs []record, start, end time.Time) []*selfTestResult {
 	countSum := func(c string) bool { return strings.HasSuffix(c, "-exact") }
 	every := func(string) bool { return true }
 	return selfTestWith(j, recs, []flavour{
-		{"high-phantoms", j.l.withHighPhantoms(from, to), countSum},
-		{"low-phantoms", j.l.withLowPhantoms(from, to, start), every},
-		{"removed-rows", j.l.withoutRows(), every},
+		{name: "high-phantoms", l: j.l.withHighPhantoms(from, to), covers: countSum},
+		{name: "low-phantoms", l: j.l.withLowPhantoms(from, to), covers: every},
+		{name: "removed-rows", l: j.l.withoutRows(), covers: every},
 	})
 }
 
@@ -175,6 +178,24 @@ type flavour struct {
 	name   string
 	l      *ledger
 	covers func(class string) bool
+	// judgeWith replaces the judge under test (tests only; nil = j.judgeWith).
+	judgeWith func(*ledger, record) verdict
+}
+
+// cannotFollow reports a change that moved an answer's acceptable values
+// entirely off their old position: every answer that passed before is now
+// out of range, so a correct judge must fail it. A change that only widens
+// or narrows a bracket (a row in flight at the query, or between a relative
+// window's earliest and latest start) is not one: the true answer may lie in
+// both. This reads the two expectations only, never the answer, so it does
+// not share code with the judgement it checks.
+func cannotFollow(old, new expectation) bool {
+	apart := func(oLo, oHi, nLo, nHi tally) bool {
+		return nLo.count > oHi.count || nHi.count < oLo.count || nLo.sum > oHi.sum || nHi.sum < oLo.sum
+	}
+	return !sameRows(old.rows, new.rows) ||
+		apart(old.exactLo, old.exactHi, new.exactLo, new.exactHi) ||
+		apart(old.totLo, old.totHi, new.totLo, new.totHi)
 }
 
 func selfTestWith(j judge, recs []record, flavours []flavour) []*selfTestResult {
@@ -183,16 +204,30 @@ func selfTestWith(j judge, recs []record, flavours []flavour) []*selfTestResult 
 	for _, f := range flavours {
 		st := &selfTestResult{Flavour: f.name, ByClass: map[string]int{}}
 		classes := map[string]bool{}
-		// moved[i]: the change moved record i's expectation; judged[i]: its
-		// answer against the changed ledger. Computed in parallel.
-		moved := make([]bool, len(recs))
+		judgeWith := f.judgeWith
+		if judgeWith == nil {
+			judgeWith = j.judgeWith
+		}
+		// required[i]: the change moved record i's acceptable answers off
+		// their old position (cannotFollow); judged[i]: its answer against
+		// the changed ledger. Computed in parallel.
+		required := make([]bool, len(recs))
+		widened := make([]bool, len(recs))
 		judged := make([]verdict, len(recs))
 		parallel(len(recs), func(i int) {
-			if verdicts[i].status != pass || verdicts[i].exp.equal(j.expect(f.l, recs[i])) {
+			if verdicts[i].status != pass {
 				return
 			}
-			moved[i] = true
-			judged[i] = j.judgeWith(f.l, recs[i])
+			e := j.expect(f.l, recs[i])
+			if verdicts[i].exp.equal(e) {
+				return
+			}
+			if !cannotFollow(verdicts[i].exp, e) {
+				widened[i] = true
+				return
+			}
+			required[i] = true
+			judged[i] = judgeWith(f.l, recs[i])
 		})
 		for i, r := range recs {
 			v := verdicts[i]
@@ -200,7 +235,10 @@ func selfTestWith(j judge, recs []record, flavours []flavour) []*selfTestResult 
 				continue
 			}
 			classes[v.class] = true
-			if !moved[i] {
+			if widened[i] {
+				st.Widened++
+			}
+			if !required[i] {
 				continue
 			}
 			st.Required++
@@ -208,7 +246,8 @@ func selfTestWith(j judge, recs []record, flavours []flavour) []*selfTestResult 
 			if pv := judged[i]; pv.status != fail {
 				st.Missed++
 				if len(st.MissedFirst) < 5 {
-					st.MissedFirst = append(st.MissedFirst, failure{SQL: r.sql, Wire: string(r.wire), Header: r.header, Why: "still " + string(pv.status), Class: v.class})
+					why := fmt.Sprintf("still %s: answer %v; before %s; after %s", pv.status, r.res.rows, brackets(v.exp), brackets(pv.exp))
+					st.MissedFirst = append(st.MissedFirst, failure{SQL: r.sql, Wire: string(r.wire), Header: r.header, Why: why, Class: v.class, At: r.send.UTC().Format(time.RFC3339Nano)})
 				}
 			}
 		}
@@ -222,6 +261,13 @@ func selfTestWith(j judge, recs []record, flavours []flavour) []*selfTestResult 
 		out = append(out, st)
 	}
 	return out
+}
+
+func brackets(e expectation) string {
+	if e.rows != nil {
+		return fmt.Sprintf("%d rows %v", len(e.rows), head(e.rows))
+	}
+	return fmt.Sprintf("exact [%d,%d]/[%d,%d] total [%d,%d]/[%d,%d]", e.exactLo.count, e.exactHi.count, e.exactLo.sum, e.exactHi.sum, e.totLo.count, e.totHi.count, e.totLo.sum, e.totHi.sum)
 }
 
 func finalVerdict(c config, rep *report) string {

@@ -240,12 +240,13 @@ func head(rs [][]string) [][]string {
 }
 
 // The self-test ledgers (plan revision 21, review H1/H3): each changes what
-// some answers must be; every passing judgement whose expectation changes
-// must then FAIL, or the judge is not checking that part.
+// some answers must be; every passing judgement the change moves off its old
+// values (cannotFollow) must then FAIL, or the judge is not checking that
+// part.
 
 // withHighPhantoms adds one row per minute over [from, to] to every
-// measurement, with seqs above any real one, settled a second before their
-// own stamp (never future-stamped, so never excused).
+// measurement, with seqs above any real one, acked at from: before every
+// query, so never in flight (and never future-stamped, so never excused).
 func (l *ledger) withHighPhantoms(from, to time.Time) *ledger {
 	return l.mutate(func(m string, rs []*row) []*row {
 		seq := int64(1e15)
@@ -253,22 +254,23 @@ func (l *ledger) withHighPhantoms(from, to time.Time) *ledger {
 		for t := from.Truncate(time.Minute); !t.After(to); t = t.Add(time.Minute) {
 			seq++
 			ts := t.Add(17 * time.Second)
-			rs = append(rs, &row{seq: seq, tsUs: ts.UnixMicro(), host: i % hosts, sentAt: ts.Add(-time.Second), ackedAt: ts.Add(-time.Second)})
+			rs = append(rs, &row{seq: seq, tsUs: ts.UnixMicro(), host: i % hosts, sentAt: from, ackedAt: from})
 			i++
 		}
 		return rs
 	})
 }
 
-// withLowPhantoms adds rows with seqs below every real one, acked at at: they
-// fall inside the exact part of every window that holds them.
-func (l *ledger) withLowPhantoms(from, to, at time.Time) *ledger {
+// withLowPhantoms adds rows with seqs below every real one, acked at from
+// (before every query): they fall inside the exact part of every window that
+// holds them.
+func (l *ledger) withLowPhantoms(from, to time.Time) *ledger {
 	return l.mutate(func(m string, rs []*row) []*row {
 		seq := int64(0)
 		i := 0
 		for t := from.Truncate(time.Minute); !t.After(to); t = t.Add(time.Minute) {
 			seq--
-			rs = append(rs, &row{seq: seq, tsUs: t.Add(23 * time.Second).UnixMicro(), host: i % hosts, sentAt: at, ackedAt: at})
+			rs = append(rs, &row{seq: seq, tsUs: t.Add(23 * time.Second).UnixMicro(), host: i % hosts, sentAt: from, ackedAt: from})
 			i++
 		}
 		return rs
