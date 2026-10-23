@@ -53,6 +53,9 @@ func (rn *runner) exec(ctx context.Context, q query, phase string) {
 				continue // built without the msgpack endpoint
 			}
 			after, _ := rn.arc.metrics(ctx, pruneMetrics...)
+			if n := len(rn.records) + 1; n%200 == 0 {
+				fmt.Printf("%s %d answers recorded (%s/%s)\n", time.Now().Format("15:04:05"), n, q.shape, q.offset)
+			}
 			rn.records = append(rn.records, record{
 				q: q, wire: w, header: header, sql: sqlText, res: res, send: send, recv: recv, phase: phase,
 				expanded: after["arc_query_file_time_pruning_expanded_total"] - before["arc_query_file_time_pruning_expanded_total"],
