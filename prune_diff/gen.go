@@ -140,7 +140,15 @@ func (g *generator) run(ctx context.Context, ms []string, heavy string, interval
 				case <-tick.C:
 				}
 				now := time.Now()
-				rs, body := g.batch(m, n, func() time.Time { return pickScenario(rng).ts(now, rng) }, rng)
+				ts := func() time.Time { return pickScenario(rng).ts(now, rng) }
+				if m == heavy {
+					// Steady only: its job is to reach the file cap in the live
+					// hour, and a batch this size spread over 30 hours writes a
+					// file into each of them on every flush (tens of thousands
+					// of files in minutes, none of them the cap's).
+					ts = func() time.Time { return now }
+				}
+				rs, body := g.batch(m, n, ts, rng)
 				g.write(ctx, m, rs, body)
 			}
 		}(i, m)

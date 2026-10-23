@@ -34,7 +34,9 @@ func (rn *runner) exec(ctx context.Context, q query, phase string) {
 	for _, header := range []bool{true, false} {
 		sqlText := q.from(rn.tableRef(header))
 		wires := []wire{wireJSON}
-		if q.kind == kindCountSum {
+		if q.kind == kindCountSum && header {
+			// The table form is a query-transform concern; one form is
+			// enough to hold the three wires to the same answer.
 			wires = append(wires, wireArrow, wireMsgPack)
 		}
 		for _, w := range wires {
