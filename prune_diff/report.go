@@ -56,9 +56,14 @@ type report struct {
 	Passes        float64            `json:"file_pruning_passes"`
 	Compacted     *float64           `json:"compaction_files_compacted,omitempty"`
 	LiveHourExact int                `json:"exact_judgements_starting_in_live_hour"`
-	MayMiss       int                `json:"judgements_allowed_to_miss_future_stamped_rows"`
-	BracketZero   float64            `json:"bracket_lower_zero_fraction"`
-	SelfTest      []*selfTestResult  `json:"self_test,omitempty"`
+	// Of the prunable live-hour count/sum judgements, how many reached the
+	// file-time pass (Arc's passes metric moved): pruning that never runs
+	// proves nothing.
+	LiveHourPrunable int               `json:"prunable_live_hour_judgements"`
+	LiveHourPassed   int               `json:"prunable_live_hour_judgements_that_reached_the_pass"`
+	MayMiss          int               `json:"judgements_allowed_to_miss_future_stamped_rows"`
+	BracketZero      float64           `json:"bracket_lower_zero_fraction"`
+	SelfTest         []*selfTestResult `json:"self_test,omitempty"`
 	// Latency of answered queries (status 200), by wire, and by wire for
 	// windows starting in the live hour (what file pruning can narrow) and
 	// for queries sent in minutes 0-6 of an hour. For on/off A/B runs.
@@ -136,6 +141,12 @@ func buildReport(c config, j judge, rn *runner, g *generator, start time.Time, c
 		if v.status == pass && strings.HasSuffix(v.class, "-exact") && v.exp.exactLo.count > 0 &&
 			!r.q.start.IsZero() && !r.q.start.Before(r.send.Truncate(time.Hour)) {
 			rep.LiveHourExact++
+			if r.q.prunable {
+				rep.LiveHourPrunable++
+				if r.passes > 0 {
+					rep.LiveHourPassed++
+				}
+			}
 		}
 		if r.phase == "live" && !r.send.Truncate(time.Hour).Equal(start.Truncate(time.Hour)) {
 			rep.crossedHour = true
@@ -347,6 +358,10 @@ func finalVerdict(c config, rep *report) string {
 		rep.Reasons = append(rep.Reasons, "no DELETE ran")
 		return "INCONCLUSIVE"
 	}
+	if c.expectFilePruning && rep.LiveHourPrunable > 0 && 2*rep.LiveHourPassed < rep.LiveHourPrunable {
+		rep.Reasons = append(rep.Reasons, fmt.Sprintf("only %d of %d prunable live-hour count/sum judgements reached the file-time pass", rep.LiveHourPassed, rep.LiveHourPrunable))
+		return "INCONCLUSIVE"
+	}
 	if rep.errCount > 0 {
 		rep.Reasons = append(rep.Reasons, fmt.Sprintf("%d errors", rep.errCount))
 		return "ERROR"
@@ -401,6 +416,7 @@ func printReport(rep *report) {
 		l := rep.Latency[k]
 		fmt.Printf("latency %-22s n=%-6d p50 %7.1f ms  p90 %7.1f  p99 %7.1f  max %7.1f\n", k, l.N, l.P50, l.P90, l.P99, l.Max)
 	}
+	fmt.Printf("file pruning: prunable live-hour judgements that reached the pass %d/%d\n", rep.LiveHourPassed, rep.LiveHourPrunable)
 	fmt.Printf("file pruning: passes %.0f expansions %.0f; live-hour exact judgements %d; bracket lower=0 %.0f%%; allowed to miss future-stamped rows %d\n", rep.Passes, rep.Expansions, rep.LiveHourExact, rep.BracketZero*100, rep.MayMiss)
 	if rep.Compacted != nil {
 		fmt.Printf("compaction files compacted: %.0f\n", *rep.Compacted)
