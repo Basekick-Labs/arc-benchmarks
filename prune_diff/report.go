@@ -24,10 +24,10 @@ type bucket struct {
 }
 
 type selfTestResult struct {
-	Flavour     string         `json:"flavour"`
-	OK          bool           `json:"ok"`
-	Required    int            `json:"required_failures"`
-	Missed      int            `json:"missed"`
+	Flavour  string `json:"flavour"`
+	OK       bool   `json:"ok"`
+	Required int    `json:"required_failures"`
+	Missed   int    `json:"missed"`
 	// Widened: judgements the change moved without moving them off their
 	// old values (see cannotFollow); not required to fail.
 	Widened     int            `json:"widened_not_required"`

@@ -250,3 +250,25 @@ func TestGroupedRowsJudgeLikeSingleRows(t *testing.T) {
 		t.Fatal("grouped tallies differ")
 	}
 }
+
+// cannotFollow on each part and dimension on its own.
+func TestCannotFollow(t *testing.T) {
+	pt := func(c, s int64) tally { return tally{c, s} }
+	live := expectation{exactLo: pt(5, 40), exactHi: pt(5, 40), totLo: pt(5, 40), totHi: pt(7, 300)}
+	for _, c := range []struct {
+		name string
+		new  expectation
+		want bool
+	}{
+		{"exact count only (a seq-0 row)", expectation{exactLo: pt(6, 40), exactHi: pt(6, 40), totLo: pt(6, 40), totHi: pt(8, 300)}, true},
+		{"exact sum only (a seq rewritten)", expectation{exactLo: pt(5, 41), exactHi: pt(5, 41), totLo: pt(5, 41), totHi: pt(7, 301)}, true},
+		{"tot only, past the in-flight band", expectation{exactLo: pt(5, 40), exactHi: pt(5, 40), totLo: pt(6, 1e15), totHi: pt(8, 1e15+300)}, true},
+		{"tot widened", expectation{exactLo: pt(5, 40), exactHi: pt(5, 40), totLo: pt(5, 40), totHi: pt(8, 1e15)}, false},
+		{"tot shifted inside its band", expectation{exactLo: pt(5, 40), exactHi: pt(5, 40), totLo: pt(6, 140), totHi: pt(8, 400)}, false},
+		{"rows", expectation{exactLo: pt(5, 40), exactHi: pt(5, 40), totLo: pt(5, 40), totHi: pt(7, 300), rows: [][]string{{"1"}}}, true},
+	} {
+		if got := cannotFollow(live, c.new); got != c.want {
+			t.Errorf("%s: cannotFollow = %v, want %v", c.name, got, c.want)
+		}
+	}
+}
