@@ -35,6 +35,8 @@ type query struct {
 	relative bool
 	// start is a literal window's start (zero for a relative one).
 	start time.Time
+	// span is a relative window's length: its start is Arc's now() - span.
+	span time.Duration
 	// prunable: Arc's time-range scanner narrows this shape, so a live-hour
 	// window reaches the file-time pass. False for shapes Arc must not prune
 	// (OR) and for shapes it refuses and reads whole (NOT, arithmetic, a
@@ -105,7 +107,7 @@ const countSum = "count(*), coalesce(sum(seq),0)::BIGINT"
 // FILTER clause turned pruning off for every count/sum query and the harness
 // tested almost none of it.
 func cs(ex string) string {
-	return fmt.Sprintf("count(*), coalesce(sum(seq),0)::BIGINT, count_if(%s), coalesce(sum(CASE WHEN %s THEN seq ELSE 0 END),0)::BIGINT", ex, ex)
+	return fmt.Sprintf("count(*), coalesce(sum(seq),0)::BIGINT, coalesce(count_if(%s),0)::BIGINT, coalesce(sum(CASE WHEN %s THEN seq ELSE 0 END),0)::BIGINT", ex, ex)
 }
 
 // buildCorpus returns every query for measurement m (and m2 for the
@@ -177,7 +179,7 @@ func buildCorpus(m, m2 string, ref time.Time) []query {
 			qs = append(qs, query{shape: "two-measurements", offset: o.name, kind: kindCountSum, meas: m, meas2: m2, prunable: false,
 				sel: fixed(ge(s)), // the second measurement's window is s2; see twoSel
 				from: func(t, ex func(string) string) string {
-					inner := "count(*) c, coalesce(sum(seq),0)::BIGINT s, count_if(%[1]s) ec, coalesce(sum(CASE WHEN %[1]s THEN seq ELSE 0 END),0)::BIGINT es"
+					inner := "count(*) c, coalesce(sum(seq),0)::BIGINT s, coalesce(count_if(%[1]s),0)::BIGINT ec, coalesce(sum(CASE WHEN %[1]s THEN seq ELSE 0 END),0)::BIGINT es"
 					return fmt.Sprintf("SELECT x.c + y.c, x.s + y.s, x.ec + y.ec, x.es + y.es FROM (SELECT %s FROM %s WHERE time >= '%s') x, (SELECT %s FROM %s WHERE time >= '%s') y",
 						fmt.Sprintf(inner, ex(m)), t(m), Sl, fmt.Sprintf(inner, ex(m2)), t(m2), lit(S2))
 				}})
@@ -199,7 +201,7 @@ func buildCorpus(m, m2 string, ref time.Time) []query {
 			{"current-timestamp", fmt.Sprintf("time > CURRENT_TIMESTAMP - INTERVAL '%d seconds'", secs)},
 		} {
 			where := form.where
-			qs = append(qs, query{shape: form.shape, offset: name, kind: kindCountSum, meas: m, prunable: true, relative: true, sel: rel,
+			qs = append(qs, query{shape: form.shape, offset: name, kind: kindCountSum, meas: m, prunable: true, relative: true, span: time.Duration(secs) * time.Second, sel: rel,
 				from: func(t, ex func(string) string) string {
 					return fmt.Sprintf("SELECT %s FROM %s WHERE %s", cs(ex(m)), t(m), where)
 				}})

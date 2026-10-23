@@ -310,3 +310,32 @@ func TestDeleteCellJudge(t *testing.T) {
 		t.Fatalf("%+v", rep)
 	}
 }
+
+// A relative window starting in the live hour gets the same contract: a
+// future-stamped row flushed long before may be hidden (the m1-live and
+// m2-live60 "wrong answers" of the first matrix rerun), an ordinary row
+// may not.
+func TestJudgeRelativeWindowFutureStampedContract(t *testing.T) {
+	flush := base.Add(10 * time.Minute)
+	l := newLedger()
+	l.sent("m0", []*row{
+		{seq: 1, tsUs: flush.Add(-time.Minute).UnixMicro(), sentAt: flush, ackedAt: flush},
+		{seq: 2, tsUs: flush.Add(35 * time.Minute).UnixMicro(), sentAt: flush, ackedAt: flush, fut: true}, // 10:45, ahead of the 10:39:30 start
+	})
+	send := flush.Add(30 * time.Minute)
+	q := query{kind: kindCountSum, meas: "m0", relative: true, span: 30 * time.Second, sel: func(now int64) match { return gt(now - 30e6) }}
+	r := rec(l, q, "frozen", send, 0, answer(0, 0, 0, 0))
+	j := judge{l: l, margin: 300 * time.Second}
+	if v := j.settle(r); v.status != pass || !v.mayMiss {
+		t.Fatalf("a future-stamped row hidden in its live hour: %+v", v)
+	}
+	if v := (judge{l: l}).settle(r); v.status != fail {
+		t.Fatalf("without file pruning the row must be there: %+v", v)
+	}
+	// An ordinary row in the window is never excused.
+	l.sent("m0", []*row{{seq: 3, tsUs: send.Add(-10 * time.Second).UnixMicro(), sentAt: send.Add(-time.Minute), ackedAt: send.Add(-time.Minute)}})
+	r = rec(l, q, "frozen", send, 0, answer(0, 0, 0, 0))
+	if v := j.settle(r); v.status != fail {
+		t.Fatalf("a dropped ordinary row passed: %+v", v)
+	}
+}
