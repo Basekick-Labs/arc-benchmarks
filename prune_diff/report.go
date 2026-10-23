@@ -50,6 +50,7 @@ type report struct {
 	Passes        float64            `json:"file_pruning_passes"`
 	Compacted     *float64           `json:"compaction_files_compacted,omitempty"`
 	LiveHourExact int                `json:"exact_judgements_starting_in_live_hour"`
+	MayMiss       int                `json:"judgements_allowed_to_miss_future_stamped_rows"`
 	BracketZero   float64            `json:"bracket_lower_zero_fraction"`
 	SelfTest      *selfTestResult    `json:"self_test,omitempty"`
 	failCount     int
@@ -105,6 +106,9 @@ func buildReport(c config, j judge, rn *runner, g *generator, start time.Time, c
 		}
 		if v.class == "live-exact" && v.status == pass && !r.q.start.IsZero() && !r.q.start.Before(r.send.Truncate(time.Hour)) {
 			rep.LiveHourExact++
+		}
+		if v.mayMiss {
+			rep.MayMiss++
 		}
 		if v.status == fail {
 			rep.failCount++
@@ -213,7 +217,7 @@ func printReport(rep *report) {
 	fmt.Printf("\n== prune_diff %s: %s %v\n", rep.Mode, rep.Verdict, rep.Reasons)
 	fmt.Printf("writes %d (failed %d), rows %d, totals %v\n", rep.Writes, rep.WriteFails, rep.Rows, rep.Totals)
 	fmt.Printf("by class %v\n", rep.ByClass)
-	fmt.Printf("file pruning: passes %.0f expansions %.0f; live-hour exact judgements %d; bracket lower=0 %.0f%%\n", rep.Passes, rep.Expansions, rep.LiveHourExact, rep.BracketZero*100)
+	fmt.Printf("file pruning: passes %.0f expansions %.0f; live-hour exact judgements %d; bracket lower=0 %.0f%%; allowed to miss future-stamped rows %d\n", rep.Passes, rep.Expansions, rep.LiveHourExact, rep.BracketZero*100, rep.MayMiss)
 	if rep.Compacted != nil {
 		fmt.Printf("compaction files compacted: %.0f\n", *rep.Compacted)
 	}

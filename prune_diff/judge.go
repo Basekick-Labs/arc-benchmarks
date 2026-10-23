@@ -36,8 +36,10 @@ type verdict struct {
 	status status
 	class  string // frozen-exact, frozen-bracket, live-exact, live-bracket
 	why    string
-	lower  tally
-	upper  tally
+	// mayMiss: the answer is allowed to lack future-stamped rows (mayHide).
+	mayMiss bool
+	lower   tally
+	upper   tally
 }
 
 // judge settles a record against a ledger. lag is how long after its ack a
@@ -48,6 +50,23 @@ type judge struct {
 	lag time.Duration
 	off time.Duration
 	tol time.Duration
+	// margin > 0 applies file-time pruning's documented contract: a row
+	// stamped more than margin after its flush, in the flush's own hour, may
+	// be invisible until that hour closes (internal/pruning/file_time_pruning.go).
+	margin time.Duration
+}
+
+// mayHide reports a row file-time pruning may leave out of a query sent at
+// send: future-stamped beyond the margin, in its flush's hour, which is still
+// the live hour. Its absence is reported, not failed.
+func (j judge) mayHide(r *row, send time.Time) bool {
+	if j.margin <= 0 {
+		return false
+	}
+	ts := time.UnixMicro(r.tsUs).UTC()
+	return ts.Sub(r.sentAt) > j.margin &&
+		ts.Truncate(time.Hour).Equal(r.sentAt.UTC().Truncate(time.Hour)) &&
+		ts.Truncate(time.Hour).Equal(send.UTC().Truncate(time.Hour))
 }
 
 func (j judge) settle(r record) verdict {
@@ -73,6 +92,13 @@ func (j judge) settle(r record) verdict {
 	nowLo := r.send.Add(j.off - j.tol).UnixMicro()
 	nowHi := r.recv.Add(j.off + j.tol).UnixMicro()
 	most, least := r.q.sel(nowLo), r.q.sel(nowHi)
+	strict := least
+	least = func(x *row) bool { return strict(x) && !j.mayHide(x, r.send) }
+	sel2 := r.q.sel2
+	if sel2 != nil {
+		strict2 := sel2
+		sel2 = func(x *row) bool { return strict2(x) && !j.mayHide(x, r.send) }
+	}
 
 	var lowerCut, upperCut time.Time
 	if r.phase == "frozen" {
@@ -88,19 +114,23 @@ func (j judge) settle(r record) verdict {
 		upper = j.l.ackedBy(r.q.meas, most, upperCut)
 	}
 	if r.q.meas2 != "" {
-		lower = plus(lower, j.l.ackedBy(r.q.meas2, r.q.sel2, lowerCut))
+		lower = plus(lower, j.l.ackedBy(r.q.meas2, sel2, lowerCut))
 		if r.phase == "frozen" {
 			upper = plus(upper, j.l.ackedBy(r.q.meas2, r.q.sel2, upperCut))
 		} else {
 			upper = plus(upper, j.l.sentBy(r.q.meas2, r.q.sel2, upperCut))
 		}
 	}
-	exact := lower == upper
+	strictLower := j.l.ackedBy(r.q.meas, strict, lowerCut)
+	if r.q.meas2 != "" {
+		strictLower = plus(strictLower, j.l.ackedBy(r.q.meas2, r.q.sel2, lowerCut))
+	}
+	exact := strictLower == upper
 	class := r.phase + "-bracket"
 	if exact {
 		class = r.phase + "-exact"
 	}
-	v := verdict{class: class, lower: lower, upper: upper}
+	v := verdict{class: class, lower: lower, upper: upper, mayMiss: lower != strictLower}
 
 	switch r.q.kind {
 	case kindCountSum:
@@ -128,8 +158,9 @@ func (j judge) settle(r record) verdict {
 			v.status, v.why = skipped, "full result with an unsettled row set"
 			return v
 		}
-		want := expectRows(r.q.kind, j.l.rowsOf(r.q.meas, func(x *row) bool { return least(x) && !x.ackedAt.After(lowerCut) }))
-		if !sameRows(want, r.res.rows) {
+		want := expectRows(r.q.kind, j.l.rowsOf(r.q.meas, func(x *row) bool { return strict(x) && !x.ackedAt.After(lowerCut) }))
+		wantHidden := expectRows(r.q.kind, j.l.rowsOf(r.q.meas, func(x *row) bool { return least(x) && !x.ackedAt.After(lowerCut) }))
+		if !sameRows(want, r.res.rows) && !(v.mayMiss && sameRows(wantHidden, r.res.rows)) {
 			v.status, v.why = fail, fmt.Sprintf("rows differ: want %d rows %v…, got %d rows %v…", len(want), head(want), len(r.res.rows), head(r.res.rows))
 			return v
 		}
@@ -181,7 +212,10 @@ func (l *ledger) withPhantoms(from, to, at time.Time) (*ledger, int64) {
 		i := 0
 		for t := from.Truncate(time.Minute); !t.After(to); t = t.Add(time.Minute) {
 			seq++
-			c.rows[m] = append(c.rows[m], &row{seq: seq, tsUs: t.Add(17 * time.Second).UnixMicro(), host: i % hosts, sentAt: at, ackedAt: at})
+			ts := t.Add(17 * time.Second)
+			// sentAt at the row's own stamp: never "future-stamped", so
+			// never excused by mayHide.
+			c.rows[m] = append(c.rows[m], &row{seq: seq, tsUs: ts.UnixMicro(), host: i % hosts, sentAt: ts, ackedAt: at})
 			i++
 		}
 	}

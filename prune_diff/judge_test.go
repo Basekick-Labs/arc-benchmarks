@@ -111,3 +111,33 @@ func TestSelfTestFailsWhatPhantomsChange(t *testing.T) {
 		t.Fatalf("top-n self-test %+v", st)
 	}
 }
+
+// File-time pruning's contract: a row stamped beyond the margin, in its
+// flush's hour, may be missing while that hour is live, and only then.
+func TestJudgeFutureStampedContract(t *testing.T) {
+	flush := time.Date(2026, 10, 22, 10, 10, 0, 0, time.UTC)
+	l := newLedger()
+	l.sent("m0", []*row{
+		{seq: 1, tsUs: flush.Add(-time.Minute).UnixMicro(), sentAt: flush, ackedAt: flush},
+		{seq: 2, tsUs: flush.Add(20 * time.Minute).UnixMicro(), sentAt: flush, ackedAt: flush}, // +20m, same hour
+	})
+	q := geQuery(flush.Add(-5 * time.Minute))
+	rec := record{q: q, phase: "frozen", send: flush.Add(30 * time.Minute), recv: flush.Add(30 * time.Minute), res: countAnswer(1, 1)}
+
+	j := judge{l: l, margin: 300 * time.Second}
+	if v := j.settle(rec); v.status != pass || !v.mayMiss {
+		t.Fatalf("missing future-stamped row in its live hour: %+v", v)
+	}
+	if v := (judge{l: l}).settle(rec); v.status != fail {
+		t.Fatalf("without file pruning the row must be there: %+v", v)
+	}
+	rec.send, rec.recv = flush.Add(time.Hour), flush.Add(time.Hour) // hour closed
+	if v := j.settle(rec); v.status != fail {
+		t.Fatalf("after the hour closes the row must be there: %+v", v)
+	}
+	rec.send, rec.recv = flush.Add(30*time.Minute), flush.Add(30*time.Minute)
+	rec.res = countAnswer(2, 3)
+	if v := j.settle(rec); v.status != pass {
+		t.Fatalf("finding the row is fine too: %+v", v)
+	}
+}

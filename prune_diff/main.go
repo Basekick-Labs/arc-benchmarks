@@ -48,6 +48,7 @@ type config struct {
 	compaction                  bool
 	compactionFiles             int
 	expectFilePruning           bool
+	margin                      time.Duration
 	selfTest                    bool
 	waitForHour                 bool
 }
@@ -69,6 +70,7 @@ func main() {
 	flag.StringVar(&c.label, "arc-config", "", "free-text label of the Arc config under test (self-reported, recorded in the report)")
 	flag.BoolVar(&c.compaction, "compaction", false, "compaction-on run: seed the compaction measurement and require compactions")
 	flag.IntVar(&c.compactionFiles, "compaction-files", 3, "files per compaction hour (>= compaction.hourly_min_files)")
+	flag.DurationVar(&c.margin, "margin", 300*time.Second, "query.file_time_pruning_margin_seconds of the Arc under test")
 	flag.BoolVar(&c.expectFilePruning, "expect-file-pruning", false, "Arc runs with query.file_time_pruning on: zero expansions is INCONCLUSIVE")
 	flag.BoolVar(&c.selfTest, "self-test", true, "re-judge every answer against phantom rows; each must FAIL")
 	flag.BoolVar(&c.waitForHour, "wait", true, "wait for a run shape that proves something instead of refusing")
@@ -144,6 +146,9 @@ func run(ctx context.Context, c config) int {
 
 	pairs := map[string]string{"m0": "m1", "m1": "m2", "m2": "m0", "mc": ""}
 	j := judge{l: l, lag: c.lag, off: off, tol: tol}
+	if c.expectFilePruning {
+		j.margin = c.margin
+	}
 	switch c.mode {
 	case "frozen":
 		ictx, cancel := context.WithTimeout(ctx, c.duration)
