@@ -141,3 +141,30 @@ func TestJudgeFutureStampedContract(t *testing.T) {
 		t.Fatalf("finding the row is fine too: %+v", v)
 	}
 }
+
+// Pruning hides only the future-stamped rows in files flushed before the
+// window: any subset of them may be missing from a full result.
+func TestWithinHidden(t *testing.T) {
+	base := time.Date(2026, 10, 22, 10, 0, 0, 0, time.UTC)
+	rows := []*row{
+		{seq: 1, tsUs: base.UnixMicro()},
+		{seq: 2, tsUs: base.Add(time.Second).UnixMicro()},
+		{seq: 3, tsUs: base.Add(2 * time.Second).UnixMicro()}, // hideable
+		{seq: 4, tsUs: base.Add(3 * time.Second).UnixMicro()}, // hideable
+	}
+	hide := func(x *row) bool { return x.seq >= 3 }
+	got := expectRows(kindTopN, []*row{rows[0], rows[1], rows[3]}) // 3 hidden, 4 not
+	if !withinHidden(kindTopN, rows, hide, got) {
+		t.Fatal("a subset of hideable rows missing must pass")
+	}
+	if withinHidden(kindTopN, rows, hide, expectRows(kindTopN, []*row{rows[0], rows[3]})) {
+		t.Fatal("a missing non-hideable row must fail")
+	}
+	b := expectRows(kindBuckets, []*row{rows[0], rows[1], rows[2]}) // one minute bucket: count 3
+	if !withinHidden(kindBuckets, rows, hide, b) {
+		t.Fatal("bucket between the hidden and full answers must pass")
+	}
+	if withinHidden(kindBuckets, rows, hide, expectRows(kindBuckets, rows[:1])) {
+		t.Fatal("bucket below the visible rows must fail")
+	}
+}

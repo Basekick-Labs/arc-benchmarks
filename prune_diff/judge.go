@@ -158,9 +158,13 @@ func (j judge) settle(r record) verdict {
 			v.status, v.why = skipped, "full result with an unsettled row set"
 			return v
 		}
-		want := expectRows(r.q.kind, j.l.rowsOf(r.q.meas, func(x *row) bool { return strict(x) && !x.ackedAt.After(lowerCut) }))
-		wantHidden := expectRows(r.q.kind, j.l.rowsOf(r.q.meas, func(x *row) bool { return least(x) && !x.ackedAt.After(lowerCut) }))
-		if !sameRows(want, r.res.rows) && !(v.mayMiss && sameRows(wantHidden, r.res.rows)) {
+		all := j.l.rowsOf(r.q.meas, func(x *row) bool { return strict(x) && !x.ackedAt.After(lowerCut) })
+		want := expectRows(r.q.kind, all)
+		ok := sameRows(want, r.res.rows)
+		if !ok && v.mayMiss {
+			ok = withinHidden(r.q.kind, all, func(x *row) bool { return !least(x) }, r.res.rows)
+		}
+		if !ok {
 			v.status, v.why = fail, fmt.Sprintf("rows differ: want %d rows %v…, got %d rows %v…", len(want), head(want), len(r.res.rows), head(r.res.rows))
 			return v
 		}
@@ -241,4 +245,77 @@ func phantomIn(real, ph *ledger, r record, j judge) bool {
 		return true
 	}
 	return r.q.meas2 != "" && real.ackedBy(r.q.meas2, r.q.sel2, cut) != ph.ackedBy(r.q.meas2, r.q.sel2, cut)
+}
+
+// withinHidden reports whether got is a full result of rows minus some subset
+// of the hideable ones (file-time pruning hides those of them in files flushed
+// before the window, not the others).
+func withinHidden(k kind, rows []*row, hideable match, got [][]string) bool {
+	switch k {
+	case kindTopN:
+		// The hideable rows that came back are known by seq; the answer must be
+		// the top 50 of the others plus those.
+		present := map[string]bool{}
+		for _, g := range got {
+			present[g[0]] = true
+		}
+		var kept []*row
+		for _, x := range rows {
+			if !hideable(x) || present[strconv.FormatInt(x.seq, 10)] {
+				kept = append(kept, x)
+			}
+		}
+		return sameRows(expectRows(k, kept), got)
+	case kindBuckets:
+		// Per bucket, between the all-hidden and none-hidden answers.
+		var visible []*row
+		for _, x := range rows {
+			if !hideable(x) {
+				visible = append(visible, x)
+			}
+		}
+		hi, lo := index(expectRows(k, rows)), index(expectRows(k, visible))
+		for _, g := range got {
+			h, okH := hi[g[0]]
+			if !okH {
+				return false
+			}
+			l, okL := lo[g[0]] // absent: every row of the bucket hideable
+			for i := 1; i <= 2; i++ {
+				v, _ := strconv.ParseInt(g[i], 10, 64)
+				var lv int64
+				if okL {
+					lv, _ = strconv.ParseInt(l[i], 10, 64)
+				}
+				hv, _ := strconv.ParseInt(h[i], 10, 64)
+				if v < lv || v > hv {
+					return false
+				}
+			}
+		}
+		for b := range lo {
+			if !containsBucket(got, b) {
+				return false // a bucket with visible rows is missing
+			}
+		}
+		return true
+	}
+	return false
+}
+
+func index(rs [][]string) map[string][]string {
+	m := map[string][]string{}
+	for _, r := range rs {
+		m[r[0]] = r
+	}
+	return m
+}
+
+func containsBucket(rs [][]string, b string) bool {
+	for _, r := range rs {
+		if r[0] == b {
+			return true
+		}
+	}
+	return false
 }
