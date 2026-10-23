@@ -3,20 +3,30 @@
 //
 // It writes rows with globally unique seq values, keeps a ledger of every row
 // Arc acknowledged, and judges each query's count(*) and sum(seq) (and a few
-// full results) against that ledger:
+// full results) against that ledger. Every count/sum query also selects its
+// exact part: the rows with seq <= N, where N is the newest seq acked a
+// visibility lag before the query was sent. That part must equal the ledger
+// exactly; the whole answer lies between the rows certainly visible and the
+// rows sent by the time the answer came back.
 //
-//   - frozen: ingest for --duration, stop, flush, then every answer must
-//     equal the ledger exactly (plus, with --data-root, an in-process DuckDB
-//     scan of the measurement's files);
-//   - live: queries run while ingest continues and across an hour boundary;
-//     every answer must lie between the rows certainly visible and the rows
-//     sent by then.
+//   - frozen: ingest for --duration, stop, flush, then run the corpus: every
+//     answer is exact (plus, with --data-root, an in-process DuckDB scan of
+//     the measurement's files);
+//   - live: the corpus runs while ingest continues and across an hour
+//     boundary (--compaction adds a measurement that compacts meanwhile).
 //
-// Afterwards every recorded answer is judged again against the ledger plus
-// phantom rows; each judgement whose window holds one must FAIL, or the
-// judge is not checking (--self-test, on by default).
+// With --expect-file-pruning, rows stamped more than the margin after their
+// flush may be missing while their hour is live: file-time pruning's
+// documented contract, counted in the report, never excused in the exact part.
 //
-//	go run ./prune_diff --arc http://localhost:8000 --mode frozen --duration 10m
+// Afterwards every passing answer is judged again against three changed
+// ledgers (phantom rows above and below every real seq, every seventh row
+// removed). Each judgement the change moves off its old acceptable values
+// must then FAIL, or the verdict is HARNESS-BROKEN (--self-test, on by
+// default). Verdicts: FAIL > HARNESS-BROKEN > ERROR > INCONCLUSIVE > PASS.
+//
+//	go run . --arc http://localhost:8000 --mode frozen --duration 5m
+//	go run . --arc http://localhost:8000 --mode live --duration 75m --expect-file-pruning
 package main
 
 import (
