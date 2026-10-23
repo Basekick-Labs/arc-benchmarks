@@ -59,9 +59,13 @@ type report struct {
 	MayMiss       int                `json:"judgements_allowed_to_miss_future_stamped_rows"`
 	BracketZero   float64            `json:"bracket_lower_zero_fraction"`
 	SelfTest      []*selfTestResult  `json:"self_test,omitempty"`
-	crossedHour   bool
-	failCount     int
-	errCount      int
+	// Latency of answered queries (status 200), by wire, and by wire for
+	// windows starting in the live hour (what file pruning can narrow) and
+	// for queries sent in minutes 0-6 of an hour. For on/off A/B runs.
+	Latency     map[string]latencyStat `json:"latency_ms,omitempty"`
+	crossedHour bool
+	failCount   int
+	errCount    int
 }
 
 func buildReport(c config, j judge, rn *runner, g *generator, start time.Time, compacted float64, compKnown bool) *report {
@@ -84,6 +88,7 @@ func buildReport(c config, j judge, rn *runner, g *generator, start time.Time, c
 		rep.Compacted = &compacted
 	}
 	brackets, zero := 0, 0
+	lat := map[string][]time.Duration{}
 	verdicts := settleAll(j, rn.records)
 	for i, r := range rn.records {
 		v := verdicts[i]
@@ -124,6 +129,17 @@ func buildReport(c config, j judge, rn *runner, g *generator, start time.Time, c
 		if v.mayMiss {
 			rep.MayMiss++
 		}
+		if r.res.status == 200 && r.res.err == nil {
+			w := string(r.wire)
+			d := r.recv.Sub(r.send)
+			lat[w] = append(lat[w], d)
+			if !r.q.start.IsZero() && !r.q.start.Before(r.send.Truncate(time.Hour)) {
+				lat[w+"/live-hour"] = append(lat[w+"/live-hour"], d)
+			}
+			if r.send.Minute() < 7 {
+				lat[w+"/minutes-0-6"] = append(lat[w+"/minutes-0-6"], d)
+			}
+		}
 		if v.status == fail {
 			rep.failCount++
 		}
@@ -134,6 +150,7 @@ func buildReport(c config, j judge, rn *runner, g *generator, start time.Time, c
 	if brackets > 0 {
 		rep.BracketZero = float64(zero) / float64(brackets)
 	}
+	rep.Latency = latencyStats(lat)
 	return rep
 }
 
@@ -270,6 +287,25 @@ func brackets(e expectation) string {
 	return fmt.Sprintf("exact [%d,%d]/[%d,%d] total [%d,%d]/[%d,%d]", e.exactLo.count, e.exactHi.count, e.exactLo.sum, e.exactHi.sum, e.totLo.count, e.totHi.count, e.totLo.sum, e.totHi.sum)
 }
 
+type latencyStat struct {
+	N   int     `json:"n"`
+	P50 float64 `json:"p50"`
+	P90 float64 `json:"p90"`
+	P99 float64 `json:"p99"`
+	Max float64 `json:"max"`
+}
+
+func latencyStats(lat map[string][]time.Duration) map[string]latencyStat {
+	out := map[string]latencyStat{}
+	ms := func(d time.Duration) float64 { return float64(d.Microseconds()) / 1000 }
+	for k, ds := range lat {
+		sort.Slice(ds, func(a, b int) bool { return ds[a] < ds[b] })
+		at := func(q float64) float64 { return ms(ds[int(q*float64(len(ds)-1))]) }
+		out[k] = latencyStat{N: len(ds), P50: at(0.50), P90: at(0.90), P99: at(0.99), Max: ms(ds[len(ds)-1])}
+	}
+	return out
+}
+
 func finalVerdict(c config, rep *report) string {
 	if rep.failCount > 0 || len(rep.RawScanFails) > 0 {
 		rep.Reasons = append(rep.Reasons, fmt.Sprintf("%d wrong answers, %d raw-scan mismatches", rep.failCount, len(rep.RawScanFails)))
@@ -322,6 +358,10 @@ func printReport(rep *report) {
 	fmt.Printf("\n== prune_diff %s: %s %v\n", rep.Mode, rep.Verdict, rep.Reasons)
 	fmt.Printf("writes %d (failed %d), rows %d, totals %v\n", rep.Writes, rep.WriteFails, rep.Rows, rep.Totals)
 	fmt.Printf("by class %v\n", rep.ByClass)
+	for _, k := range sortedKeys(rep.Latency) {
+		l := rep.Latency[k]
+		fmt.Printf("latency %-22s n=%-6d p50 %7.1f ms  p90 %7.1f  p99 %7.1f  max %7.1f\n", k, l.N, l.P50, l.P90, l.P99, l.Max)
+	}
 	fmt.Printf("file pruning: passes %.0f expansions %.0f; live-hour exact judgements %d; bracket lower=0 %.0f%%; allowed to miss future-stamped rows %d\n", rep.Passes, rep.Expansions, rep.LiveHourExact, rep.BracketZero*100, rep.MayMiss)
 	if rep.Compacted != nil {
 		fmt.Printf("compaction files compacted: %.0f\n", *rep.Compacted)

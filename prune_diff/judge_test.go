@@ -272,3 +272,14 @@ func TestCannotFollow(t *testing.T) {
 		}
 	}
 }
+
+func TestLatencyStats(t *testing.T) {
+	var ds []time.Duration
+	for i := 100; i >= 1; i-- {
+		ds = append(ds, time.Duration(i)*time.Millisecond)
+	}
+	got := latencyStats(map[string][]time.Duration{"json": ds})["json"]
+	if got.N != 100 || got.P50 != 50 || got.P90 != 90 || got.P99 != 99 || got.Max != 100 {
+		t.Fatalf("%+v", got)
+	}
+}
