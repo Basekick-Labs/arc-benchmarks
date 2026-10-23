@@ -25,6 +25,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"math/rand"
 	"os"
 	"os/signal"
@@ -161,7 +162,7 @@ func run(ctx context.Context, c config) int {
 		ref := time.Now()
 		for _, m := range all {
 			for _, q := range buildCorpus(m, pairs[m], ref) {
-				rn.exec(ctx, q, "frozen")
+				rn.exec(ctx, l, q, "frozen")
 				rn.rawCheck(l, q)
 			}
 		}
@@ -178,7 +179,7 @@ func run(ctx context.Context, c config) int {
 					}
 					// Count/sum only while ingest runs: a full result is
 					// judged only when its row set is settled.
-					rn.exec(ctx, q, "live")
+					rn.exec(ctx, l, q, "live")
 				}
 			}
 		}
@@ -222,8 +223,9 @@ func precheck(ctx context.Context, arc *arcClient, db string) error {
 		if err != nil {
 			return err
 		}
-		body := drain(resp.Body)
+		raw, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
+		body := string(raw)
 		if resp.StatusCode == 200 && strings.Contains(body, `"`+db+`"`) {
 			return fmt.Errorf("%s lists a policy or query for database %q", p, db)
 		}

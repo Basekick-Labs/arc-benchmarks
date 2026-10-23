@@ -16,6 +16,11 @@ type record struct {
 	send   time.Time
 	recv   time.Time
 	phase  string // "frozen" or "live"
+	// cut is the instant a row must have been acked by to be certainly
+	// visible to this query; settled[m] the newest seq of m acked by then.
+	// The SQL's exact part selects seq <= settled[m] (see cs).
+	cut     time.Time
+	settled map[string]int64
 	// metric deltas over this one query
 	expanded, passes float64
 }
@@ -27,19 +32,17 @@ const (
 	pass        status = "PASS"
 	fail        status = "FAIL"
 	errored     status = "ERROR"       // harness or transport problem, not a wrong answer
-	skipped     status = "SKIP"        // not judgeable (dirty measurement, live full result)
+	skipped     status = "SKIP"        // not judgeable (dirty measurement)
 	unavailable status = "UNAVAILABLE" // 503 Retry-After after the one retry
 )
 
 // verdict is one judgement.
 type verdict struct {
-	status status
-	class  string // frozen-exact, frozen-bracket, live-exact, live-bracket
-	why    string
-	// mayMiss: the answer is allowed to lack future-stamped rows (mayHide).
+	status  status
+	class   string // frozen-exact, live-exact, frozen-full, live-full
+	why     string
+	exp     expectation
 	mayMiss bool
-	lower   tally
-	upper   tally
 }
 
 // judge settles a record against a ledger. lag is how long after its ack a
@@ -50,23 +53,99 @@ type judge struct {
 	lag time.Duration
 	off time.Duration
 	tol time.Duration
-	// margin > 0 applies file-time pruning's documented contract: a row
-	// stamped more than margin after its flush, in the flush's own hour, may
-	// be invisible until that hour closes (internal/pruning/file_time_pruning.go).
+	// margin > 0 applies file-time pruning's documented contract to the
+	// whole answer's lower bound (see mayHide).
 	margin time.Duration
 }
 
-// mayHide reports a row file-time pruning may leave out of a query sent at
-// send: future-stamped beyond the margin, in its flush's hour, which is still
-// the live hour. Its absence is reported, not failed.
-func (j judge) mayHide(r *row, send time.Time) bool {
-	if j.margin <= 0 {
+// mayHide reports a row file-time pruning may leave out of r's answer
+// (internal/pruning/file_time_pruning.go): the window starts in the hour
+// that is live for Arc, the row is stamped in that hour more than the margin
+// after its flush, and its file was flushed before start - margin. Only
+// future-stamped rows qualify, and they are outside the exact part anyway;
+// this only loosens the whole answer's lower bound.
+func (j judge) mayHide(x *row, r record) bool {
+	if j.margin <= 0 || r.q.start.IsZero() || !x.fut {
 		return false
 	}
-	ts := time.UnixMicro(r.tsUs).UTC()
-	return ts.Sub(r.sentAt) > j.margin &&
-		ts.Truncate(time.Hour).Equal(r.sentAt.UTC().Truncate(time.Hour)) &&
-		ts.Truncate(time.Hour).Equal(send.UTC().Truncate(time.Hour))
+	slack := time.Second + j.tol
+	hour := r.q.start.UTC().Truncate(time.Hour)
+	ts := time.UnixMicro(x.tsUs).UTC()
+	flush := x.sentAt.Add(j.off)
+	return hour.Equal(r.send.Add(j.off).UTC().Truncate(time.Hour)) &&
+		hour.Equal(ts.Truncate(time.Hour)) &&
+		flush.Before(r.q.start.Add(-j.margin).Add(slack)) &&
+		ts.Sub(flush) > j.margin-slack
+}
+
+// expectation is everything a record's answer is judged against.
+type expectation struct {
+	exactLo, exactHi tally // the settled, not-future part: one value unless relative
+	totLo, totHi     tally // the whole answer
+	rows             [][]string
+	mayMiss          bool
+}
+
+func (e expectation) equal(o expectation) bool {
+	return e.exactLo == o.exactLo && e.exactHi == o.exactHi && e.totLo == o.totLo && e.totHi == o.totHi && sameRows(e.rows, o.rows)
+}
+
+// expect computes what r's answer must be, from ledger l.
+func (j judge) expect(l *ledger, r record) expectation {
+	// Arc evaluated now() somewhere in [nowLo, nowHi]: the earliest instant
+	// selects the most rows of a relative window, the latest the fewest.
+	nowLo := r.send.Add(j.off - j.tol).UnixMicro()
+	nowHi := r.recv.Add(j.off + j.tol).UnixMicro()
+	most, least := r.q.sel(nowLo), r.q.sel(nowHi)
+	settled := func(m string) match {
+		n := r.settled[m]
+		return func(x *row) bool { return !x.fut && x.seq <= n }
+	}
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+	part := func(m string, sel, set, cut match) tally {
+		var t tally
+		for _, x := range l.rows[m] {
+			if sel(x) && set(x) && cut(x) {
+				t.add(x)
+			}
+		}
+		return t
+	}
+	all := func(*row) bool { return true }
+	ackedByCut := func(x *row) bool { return !x.ackedAt.IsZero() && !x.ackedAt.After(r.cut) }
+	sentByRecv := func(x *row) bool { return !x.sentAt.After(r.recv) }
+	if r.phase == "frozen" {
+		sentByRecv = func(x *row) bool { return !x.ackedAt.IsZero() }
+	}
+
+	var e expectation
+	if r.q.kind != kindCountSum {
+		var rs []*row
+		set := settled(r.q.meas)
+		for _, x := range l.rows[r.q.meas] {
+			if least(x) && set(x) {
+				rs = append(rs, x)
+			}
+		}
+		e.rows = expectRows(r.q.kind, rs)
+		return e
+	}
+
+	e.exactLo = part(r.q.meas, least, settled(r.q.meas), all)
+	e.exactHi = part(r.q.meas, most, settled(r.q.meas), all)
+	visible := func(x *row) bool { return !j.mayHide(x, r) }
+	e.totLo = part(r.q.meas, least, visible, ackedByCut)
+	e.totHi = part(r.q.meas, most, all, sentByRecv)
+	e.mayMiss = e.totLo != part(r.q.meas, least, all, ackedByCut)
+	if r.q.meas2 != "" {
+		e.exactLo = plus(e.exactLo, part(r.q.meas2, r.q.sel2, settled(r.q.meas2), all))
+		e.exactHi = plus(e.exactHi, part(r.q.meas2, r.q.sel2, settled(r.q.meas2), all))
+		// sel2 starts two hours before the live hour: never file-pruned.
+		e.totLo = plus(e.totLo, part(r.q.meas2, r.q.sel2, all, ackedByCut))
+		e.totHi = plus(e.totHi, part(r.q.meas2, r.q.sel2, all, sentByRecv))
+	}
+	return e
 }
 
 func (j judge) settle(r record) verdict {
@@ -87,90 +166,51 @@ func (j judge) settle(r record) verdict {
 			return verdict{status: skipped, why: m + ": " + why}
 		}
 	}
-	// Arc evaluated now() somewhere in [nowLo, nowHi]: the earliest instant
-	// selects the most rows of a relative window, the latest the fewest.
-	nowLo := r.send.Add(j.off - j.tol).UnixMicro()
-	nowHi := r.recv.Add(j.off + j.tol).UnixMicro()
-	most, least := r.q.sel(nowLo), r.q.sel(nowHi)
-	strict := least
-	least = func(x *row) bool { return strict(x) && !j.mayHide(x, r.send) }
-	sel2 := r.q.sel2
-	if sel2 != nil {
-		strict2 := sel2
-		sel2 = func(x *row) bool { return strict2(x) && !j.mayHide(x, r.send) }
-	}
+	return j.judgeWith(j.l, r)
+}
 
-	var lowerCut, upperCut time.Time
-	if r.phase == "frozen" {
-		// Ingest stopped and the barrier saw every acked row.
-		far := time.Now().Add(24 * time.Hour)
-		lowerCut, upperCut = far, far
-	} else {
-		lowerCut, upperCut = r.send.Add(-j.lag), r.recv
-	}
-	lower := j.l.ackedBy(r.q.meas, least, lowerCut)
-	upper := j.l.sentBy(r.q.meas, most, upperCut)
-	if r.phase == "frozen" {
-		upper = j.l.ackedBy(r.q.meas, most, upperCut)
-	}
-	if r.q.meas2 != "" {
-		lower = plus(lower, j.l.ackedBy(r.q.meas2, sel2, lowerCut))
-		if r.phase == "frozen" {
-			upper = plus(upper, j.l.ackedBy(r.q.meas2, r.q.sel2, upperCut))
-		} else {
-			upper = plus(upper, j.l.sentBy(r.q.meas2, r.q.sel2, upperCut))
-		}
-	}
-	strictLower := j.l.ackedBy(r.q.meas, strict, lowerCut)
-	if r.q.meas2 != "" {
-		strictLower = plus(strictLower, j.l.ackedBy(r.q.meas2, r.q.sel2, lowerCut))
-	}
-	exact := strictLower == upper
-	class := r.phase + "-bracket"
-	if exact {
-		class = r.phase + "-exact"
-	}
-	v := verdict{class: class, lower: lower, upper: upper, mayMiss: lower != strictLower}
-
-	switch r.q.kind {
-	case kindCountSum:
-		if len(r.res.rows) != 1 || len(r.res.rows[0]) != 2 {
-			v.status, v.why = errored, fmt.Sprintf("want one row of two values, got %v", r.res.rows)
+// judgeWith judges r's answer against what ledger l says it must be.
+func (j judge) judgeWith(l *ledger, r record) verdict {
+	e := j.expect(l, r)
+	v := verdict{exp: e, mayMiss: e.mayMiss}
+	if r.q.kind != kindCountSum {
+		v.class = r.phase + "-full"
+		if !sameRows(e.rows, r.res.rows) {
+			v.status, v.why = fail, fmt.Sprintf("rows differ: want %d rows %v…, got %d rows %v…", len(e.rows), head(e.rows), len(r.res.rows), head(r.res.rows))
 			return v
 		}
-		c, err1 := strconv.ParseInt(r.res.rows[0][0], 10, 64)
-		s, err2 := strconv.ParseInt(r.res.rows[0][1], 10, 64)
-		if err1 != nil || err2 != nil {
+		v.status = pass
+		return v
+	}
+	v.class = r.phase + "-exact"
+	if len(r.res.rows) != 1 || len(r.res.rows[0]) != 4 {
+		v.status, v.why = errored, fmt.Sprintf("want one row of four values, got %v", r.res.rows)
+		return v
+	}
+	var n [4]int64
+	for i := range n {
+		x, err := strconv.ParseInt(r.res.rows[0][i], 10, 64)
+		if err != nil {
 			v.status, v.why = errored, fmt.Sprintf("non-integer answer %v", r.res.rows[0])
 			return v
 		}
-		got := tally{c, s}
-		if got.count < lower.count || got.count > upper.count || got.sum < lower.sum || got.sum > upper.sum {
-			v.status, v.why = fail, fmt.Sprintf("got count=%d sum=%d, want count in [%d,%d] sum in [%d,%d]", c, s, lower.count, upper.count, lower.sum, upper.sum)
-			return v
-		}
-		v.status = pass
-		return v
-	default:
-		// A full result is judged only when its row set is settled: the
-		// selection does not depend on now() and nothing in it is in flight.
-		if !exact || r.q.relative {
-			v.status, v.why = skipped, "full result with an unsettled row set"
-			return v
-		}
-		all := j.l.rowsOf(r.q.meas, func(x *row) bool { return strict(x) && !x.ackedAt.After(lowerCut) })
-		want := expectRows(r.q.kind, all)
-		ok := sameRows(want, r.res.rows)
-		if !ok && v.mayMiss {
-			ok = withinHidden(r.q.kind, all, func(x *row) bool { return !least(x) }, r.res.rows)
-		}
-		if !ok {
-			v.status, v.why = fail, fmt.Sprintf("rows differ: want %d rows %v…, got %d rows %v…", len(want), head(want), len(r.res.rows), head(r.res.rows))
-			return v
-		}
-		v.status = pass
+		n[i] = x
+	}
+	tot, exact := tally{n[0], n[1]}, tally{n[2], n[3]}
+	if !within(exact, e.exactLo, e.exactHi) {
+		v.status, v.why = fail, fmt.Sprintf("settled rows: got count=%d sum=%d, want count in [%d,%d] sum in [%d,%d]", exact.count, exact.sum, e.exactLo.count, e.exactHi.count, e.exactLo.sum, e.exactHi.sum)
 		return v
 	}
+	if !within(tot, e.totLo, e.totHi) {
+		v.status, v.why = fail, fmt.Sprintf("all rows: got count=%d sum=%d, want count in [%d,%d] sum in [%d,%d]", tot.count, tot.sum, e.totLo.count, e.totHi.count, e.totLo.sum, e.totHi.sum)
+		return v
+	}
+	v.status = pass
+	return v
+}
+
+func within(t, lo, hi tally) bool {
+	return t.count >= lo.count && t.count <= hi.count && t.sum >= lo.sum && t.sum <= hi.sum
 }
 
 func plus(a, b tally) tally { return tally{a.count + b.count, a.sum + b.sum} }
@@ -199,123 +239,66 @@ func head(rs [][]string) [][]string {
 	return rs
 }
 
-// withPhantoms returns a copy of l with one phantom row per minute over
-// [from, to] in every measurement, acked at at. A judge that is really
-// checking must FAIL every judgement whose window holds one (plan
-// revision 21).
-func (l *ledger) withPhantoms(from, to, at time.Time) (*ledger, int64) {
+// The self-test ledgers (plan revision 21, review H1/H3): each changes what
+// some answers must be; every passing judgement whose expectation changes
+// must then FAIL, or the judge is not checking that part.
+
+// withHighPhantoms adds one row per minute over [from, to] to every
+// measurement, with seqs above any real one, settled a second before their
+// own stamp (never future-stamped, so never excused).
+func (l *ledger) withHighPhantoms(from, to time.Time) *ledger {
+	return l.mutate(func(m string, rs []*row) []*row {
+		seq := int64(1e15)
+		i := 0
+		for t := from.Truncate(time.Minute); !t.After(to); t = t.Add(time.Minute) {
+			seq++
+			ts := t.Add(17 * time.Second)
+			rs = append(rs, &row{seq: seq, tsUs: ts.UnixMicro(), host: i % hosts, sentAt: ts.Add(-time.Second), ackedAt: ts.Add(-time.Second)})
+			i++
+		}
+		return rs
+	})
+}
+
+// withLowPhantoms adds rows with seqs below every real one, acked at at: they
+// fall inside the exact part of every window that holds them.
+func (l *ledger) withLowPhantoms(from, to, at time.Time) *ledger {
+	return l.mutate(func(m string, rs []*row) []*row {
+		seq := int64(0)
+		i := 0
+		for t := from.Truncate(time.Minute); !t.After(to); t = t.Add(time.Minute) {
+			seq--
+			rs = append(rs, &row{seq: seq, tsUs: t.Add(23 * time.Second).UnixMicro(), host: i % hosts, sentAt: at, ackedAt: at})
+			i++
+		}
+		return rs
+	})
+}
+
+// withoutRows drops every seventh acked row: an answer holding them is now
+// above the upper bound, and the exact part differs.
+func (l *ledger) withoutRows() *ledger {
+	return l.mutate(func(m string, rs []*row) []*row {
+		var kept []*row
+		for _, x := range rs {
+			if !x.ackedAt.IsZero() && x.seq%7 == 3 {
+				continue
+			}
+			kept = append(kept, x)
+		}
+		return kept
+	})
+}
+
+func (l *ledger) mutate(f func(m string, rs []*row) []*row) *ledger {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
 	c := newLedger()
 	for m, d := range l.dirty {
 		c.dirty[m] = d
 	}
-	seq := int64(1e15)
 	for m, rs := range l.rows {
-		c.rows[m] = append([]*row(nil), rs...)
-		i := 0
-		for t := from.Truncate(time.Minute); !t.After(to); t = t.Add(time.Minute) {
-			seq++
-			ts := t.Add(17 * time.Second)
-			// sentAt at the row's own stamp: never "future-stamped", so
-			// never excused by mayHide.
-			c.rows[m] = append(c.rows[m], &row{seq: seq, tsUs: ts.UnixMicro(), host: i % hosts, sentAt: ts, ackedAt: at})
-			i++
-		}
+		c.rows[m] = f(m, append([]*row(nil), rs...))
 	}
-	return c, seq - 1e15
-}
-
-// phantomIn reports whether the phantom ledger changes what r must answer:
-// only those judgements must fail. A phantom's seq (>= 1e15) puts every
-// changed count/sum window's lower bound above anything Arc can return, so
-// those fail in either mode; a full result must fail when its expected rows
-// change.
-func phantomIn(real, ph *ledger, r record, j judge) bool {
-	least := r.q.sel(r.recv.Add(j.off + j.tol).UnixMicro())
-	cut := time.Now().Add(24 * time.Hour)
-	if r.phase != "frozen" {
-		cut = r.send.Add(-j.lag)
-	}
-	if r.q.kind != kindCountSum {
-		sel := func(x *row) bool { return least(x) && !x.ackedAt.After(cut) }
-		return !sameRows(expectRows(r.q.kind, real.rowsOf(r.q.meas, sel)), expectRows(r.q.kind, ph.rowsOf(r.q.meas, sel)))
-	}
-	if real.ackedBy(r.q.meas, least, cut) != ph.ackedBy(r.q.meas, least, cut) {
-		return true
-	}
-	return r.q.meas2 != "" && real.ackedBy(r.q.meas2, r.q.sel2, cut) != ph.ackedBy(r.q.meas2, r.q.sel2, cut)
-}
-
-// withinHidden reports whether got is a full result of rows minus some subset
-// of the hideable ones (file-time pruning hides those of them in files flushed
-// before the window, not the others).
-func withinHidden(k kind, rows []*row, hideable match, got [][]string) bool {
-	switch k {
-	case kindTopN:
-		// The hideable rows that came back are known by seq; the answer must be
-		// the top 50 of the others plus those.
-		present := map[string]bool{}
-		for _, g := range got {
-			present[g[0]] = true
-		}
-		var kept []*row
-		for _, x := range rows {
-			if !hideable(x) || present[strconv.FormatInt(x.seq, 10)] {
-				kept = append(kept, x)
-			}
-		}
-		return sameRows(expectRows(k, kept), got)
-	case kindBuckets:
-		// Per bucket, between the all-hidden and none-hidden answers.
-		var visible []*row
-		for _, x := range rows {
-			if !hideable(x) {
-				visible = append(visible, x)
-			}
-		}
-		hi, lo := index(expectRows(k, rows)), index(expectRows(k, visible))
-		for _, g := range got {
-			h, okH := hi[g[0]]
-			if !okH {
-				return false
-			}
-			l, okL := lo[g[0]] // absent: every row of the bucket hideable
-			for i := 1; i <= 2; i++ {
-				v, _ := strconv.ParseInt(g[i], 10, 64)
-				var lv int64
-				if okL {
-					lv, _ = strconv.ParseInt(l[i], 10, 64)
-				}
-				hv, _ := strconv.ParseInt(h[i], 10, 64)
-				if v < lv || v > hv {
-					return false
-				}
-			}
-		}
-		for b := range lo {
-			if !containsBucket(got, b) {
-				return false // a bucket with visible rows is missing
-			}
-		}
-		return true
-	}
-	return false
-}
-
-func index(rs [][]string) map[string][]string {
-	m := map[string][]string{}
-	for _, r := range rs {
-		m[r[0]] = r
-	}
-	return m
-}
-
-func containsBucket(rs [][]string, b string) bool {
-	for _, r := range rs {
-		if r[0] == b {
-			return true
-		}
-	}
-	return false
+	return c
 }

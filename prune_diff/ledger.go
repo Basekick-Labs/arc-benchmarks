@@ -11,6 +11,8 @@ type row struct {
 	seq  int64
 	tsUs int64 // row timestamp, microseconds since the epoch
 	host int
+	// fut: stamped after the write that carried it (field fut=1).
+	fut bool
 	// sentAt is when the write carrying the row was sent; ackedAt when it
 	// returned 204 (zero while in flight or after a failure).
 	sentAt  time.Time
@@ -105,26 +107,6 @@ func (l *ledger) all(m string, w match) tally {
 	return l.ackedBy(m, w, time.Now().Add(24*time.Hour))
 }
 
-// drop removes n acked rows from the ledger (the self-test: a run against
-// a corrupted ledger must fail).
-func (l *ledger) drop(n int) int {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	dropped := 0
-	for m, rs := range l.rows {
-		kept := rs[:0]
-		for _, r := range rs {
-			if dropped < n && !r.ackedAt.IsZero() {
-				dropped++
-				continue
-			}
-			kept = append(kept, r)
-		}
-		l.rows[m] = kept
-	}
-	return dropped
-}
-
 func (l *ledger) measurements() []string {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
@@ -147,4 +129,19 @@ func (l *ledger) rowsOf(m string, w match) []*row {
 		}
 	}
 	return out
+}
+
+// maxSettled returns the newest seq of m acked at or before cutoff. Each
+// measurement is written by one goroutine, one write at a time, so every
+// row of m with a seq up to it was acked by then too.
+func (l *ledger) maxSettled(m string, cutoff time.Time) int64 {
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+	var n int64
+	for _, r := range l.rows[m] {
+		if !r.ackedAt.IsZero() && !r.ackedAt.After(cutoff) && r.seq > n {
+			n = r.seq
+		}
+	}
+	return n
 }

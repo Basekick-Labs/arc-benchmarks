@@ -29,10 +29,22 @@ func (rn *runner) tableRef(header bool) func(string) string {
 	return func(m string) string { return rn.cfg.db + "." + m }
 }
 
-// exec runs q over every wire and both table forms.
-func (rn *runner) exec(ctx context.Context, q query, phase string) {
+// exec runs q over every wire and both table forms. Each execution's exact
+// part selects the rows certainly visible when it was sent (see cs).
+func (rn *runner) exec(ctx context.Context, l *ledger, q query, phase string) {
 	for _, header := range []bool{true, false} {
-		sqlText := q.from(rn.tableRef(header))
+		cut := time.Now().Add(-rn.cfg.lag)
+		if phase == "frozen" {
+			cut = time.Now().Add(24 * time.Hour)
+		}
+		settled := map[string]int64{}
+		for _, m := range []string{q.meas, q.meas2} {
+			if m != "" {
+				settled[m] = l.maxSettled(m, cut)
+			}
+		}
+		ex := func(m string) string { return fmt.Sprintf("fut = 0 AND seq <= %d", settled[m]) }
+		sqlText := q.from(rn.tableRef(header), ex)
 		wires := []wire{wireJSON}
 		if q.kind == kindCountSum && header {
 			// The table form is a query-transform concern; one form is
@@ -57,7 +69,7 @@ func (rn *runner) exec(ctx context.Context, q query, phase string) {
 				fmt.Printf("%s %d answers recorded (%s/%s)\n", time.Now().Format("15:04:05"), n, q.shape, q.offset)
 			}
 			rn.records = append(rn.records, record{
-				q: q, wire: w, header: header, sql: sqlText, res: res, send: send, recv: recv, phase: phase,
+				q: q, wire: w, header: header, sql: sqlText, res: res, send: send, recv: recv, phase: phase, cut: cut, settled: settled,
 				expanded: after["arc_query_file_time_pruning_expanded_total"] - before["arc_query_file_time_pruning_expanded_total"],
 				passes:   after["arc_query_file_time_pruning_passes_total"] - before["arc_query_file_time_pruning_passes_total"],
 			})
@@ -121,17 +133,20 @@ func (rn *runner) rawCheck(l *ledger, q query) {
 	ref := func(m string) string {
 		return fmt.Sprintf("read_parquet('%s/%s/%s/**/*.parquet', union_by_name=true)", strings.ReplaceAll(rn.cfg.dataRoot, "'", "''"), rn.cfg.db, m)
 	}
-	sqlText := q.from(ref)
-	var c, s int64
-	if err := rn.raw.QueryRow(sqlText).Scan(&c, &s); err != nil {
+	ex := func(string) string { return "fut = 0" }
+	sqlText := q.from(ref, ex)
+	var c, s, ec, es int64
+	if err := rn.raw.QueryRow(sqlText).Scan(&c, &s, &ec, &es); err != nil {
 		rn.rawFail = append(rn.rawFail, fmt.Sprintf("%s/%s: raw scan error %v", q.shape, q.offset, err))
 		return
 	}
 	want := l.all(q.meas, q.sel(0))
+	wantEx := l.all(q.meas, and(q.sel(0), func(x *row) bool { return !x.fut }))
 	if q.meas2 != "" {
 		want = plus(want, l.all(q.meas2, q.sel2))
+		wantEx = plus(wantEx, l.all(q.meas2, and(q.sel2, func(x *row) bool { return !x.fut })))
 	}
-	if (tally{c, s}) != want {
-		rn.rawFail = append(rn.rawFail, fmt.Sprintf("%s/%s: raw scan count=%d sum=%d, ledger count=%d sum=%d: %s", q.shape, q.offset, c, s, want.count, want.sum, sqlText))
+	if (tally{c, s}) != want || (tally{ec, es}) != wantEx {
+		rn.rawFail = append(rn.rawFail, fmt.Sprintf("%s/%s: raw scan count=%d sum=%d (not future %d/%d), ledger count=%d sum=%d (%d/%d): %s", q.shape, q.offset, c, s, ec, es, want.count, want.sum, wantEx.count, wantEx.sum, sqlText))
 	}
 }

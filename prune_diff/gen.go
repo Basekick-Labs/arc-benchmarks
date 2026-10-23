@@ -69,13 +69,18 @@ const hosts = 5
 func (g *generator) batch(m string, n int, ts func() time.Time, rng *rand.Rand) ([]*row, []byte) {
 	rs := make([]*row, n)
 	var buf bytes.Buffer
+	now := time.Now()
 	for i := range rs {
 		t := ts().UTC().Truncate(time.Microsecond)
-		r := &row{seq: g.seq.Add(1), tsUs: t.UnixMicro(), host: rng.Intn(hosts)}
+		r := &row{seq: g.seq.Add(1), tsUs: t.UnixMicro(), host: rng.Intn(hosts), fut: t.After(now)}
 		rs[i] = r
 		// end_time is two hours after the row's time: a column whose name
 		// ends in "time" that an old time-range reader took for the bound.
-		fmt.Fprintf(&buf, "%s,host=h%d seq=%di,v=%s,end_time=\"%s\" %d\n", m, r.host, r.seq, strconv.FormatFloat(rng.Float64()*100, 'f', 3, 64), lit(t.Add(2*time.Hour)), r.tsUs)
+		fut := 0
+		if r.fut {
+			fut = 1
+		}
+		fmt.Fprintf(&buf, "%s,host=h%d seq=%di,fut=%di,v=%s,end_time=\"%s\" %d\n", m, r.host, r.seq, fut, strconv.FormatFloat(rng.Float64()*100, 'f', 3, 64), lit(t.Add(2*time.Hour)), r.tsUs)
 	}
 	return rs, buf.Bytes()
 }
@@ -112,6 +117,9 @@ func (g *generator) seed(ctx context.Context, m string, now time.Time, rng *rand
 	for _, off := range futureOffsets {
 		ts = append(ts, now.Add(off))
 	}
+	// The next hour too: a late future-stamped write lands there before it
+	// is live, and that hour's absence must not have been cached.
+	ts = append(ts, now.Truncate(time.Hour).Add(time.Hour+30*time.Second))
 	i := 0
 	rs, body := g.batch(m, len(ts), func() time.Time { t := ts[i]; i++; return t }, rng)
 	g.write(ctx, m, rs, body)

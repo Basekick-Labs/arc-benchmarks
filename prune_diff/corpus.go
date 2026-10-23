@@ -23,8 +23,9 @@ type query struct {
 	kind   kind
 	meas   string
 	meas2  string // the second measurement of a two-measurement shape
-	// from builds the SQL for a table reference (bare "m" or "db.m").
-	from func(t func(m string) string) string
+	// from builds the SQL for a table reference (bare "m" or "db.m") and the
+	// settled-row filter of each measurement (see cs).
+	from func(t, ex func(m string) string) string
 	// sel selects the rows the SQL selects; for a relative predicate it
 	// takes the instant Arc evaluated now() at, which is only bracketed.
 	sel func(nowUs int64) match
@@ -89,14 +90,24 @@ func fixed(m match) func(int64) match {
 
 const countSum = "count(*), coalesce(sum(seq),0)::BIGINT"
 
+// cs is a count/sum select list: the whole answer, then the part over the
+// rows ex selects. ex picks the settled, not-future-stamped rows (seq <= the
+// newest seq certainly visible when the query was sent): that part has one
+// right answer, so it is compared exactly, and an in-flight or future row
+// cannot make up for a dropped one (review B1/B2). The WHERE clause is the
+// shape's own, so pruning sees the same query.
+func cs(ex string) string {
+	return fmt.Sprintf("count(*), coalesce(sum(seq),0)::BIGINT, count(*) FILTER (WHERE %s), coalesce(sum(seq) FILTER (WHERE %s),0)::BIGINT", ex, ex)
+}
+
 // buildCorpus returns every query for measurement m (and m2 for the
 // two-measurement shapes) around the reference instant ref.
 func buildCorpus(m, m2 string, ref time.Time) []query {
 	var qs []query
 	add := func(shape, off string, prunable bool, where string, sel match) {
 		qs = append(qs, query{shape: shape, offset: off, kind: kindCountSum, meas: m, prunable: prunable, sel: fixed(sel),
-			from: func(t func(string) string) string {
-				return fmt.Sprintf("SELECT %s FROM %s WHERE %s", countSum, t(m), where)
+			from: func(t, ex func(string) string) string {
+				return fmt.Sprintf("SELECT %s FROM %s WHERE %s", cs(ex(m)), t(m), where)
 			}})
 	}
 	for _, o := range startOffsets {
@@ -134,20 +145,22 @@ func buildCorpus(m, m2 string, ref time.Time) []query {
 		where := fmt.Sprintf("time >= '%s'", Sl)
 		qs = append(qs,
 			query{shape: "subquery", offset: o.name, kind: kindCountSum, meas: m, prunable: true, sel: fixed(ge(s)),
-				from: func(t func(string) string) string {
-					return fmt.Sprintf("SELECT %s FROM (SELECT * FROM %s WHERE %s) sub", countSum, t(m), where)
+				from: func(t, ex func(string) string) string {
+					return fmt.Sprintf("SELECT %s FROM (SELECT * FROM %s WHERE %s) sub", cs(ex(m)), t(m), where)
 				}},
 			query{shape: "cte", offset: o.name, kind: kindCountSum, meas: m, prunable: true, sel: fixed(ge(s)),
-				from: func(t func(string) string) string {
-					return fmt.Sprintf("WITH w AS (SELECT * FROM %s WHERE %s) SELECT %s FROM w", t(m), where, countSum)
+				from: func(t, ex func(string) string) string {
+					return fmt.Sprintf("WITH w AS (SELECT * FROM %s WHERE %s) SELECT %s FROM w", t(m), where, cs(ex(m)))
 				}},
 			query{shape: "buckets", offset: o.name, kind: kindBuckets, meas: m, prunable: true, sel: fixed(and(ge(s), lt(e))),
-				from: func(t func(string) string) string {
-					return fmt.Sprintf("SELECT epoch_us(time_bucket(INTERVAL '1 minute', time)) AS b, count(*), coalesce(sum(seq),0)::BIGINT FROM %s WHERE time >= '%s' AND time < '%s' GROUP BY b ORDER BY b", t(m), Sl, El)
+				from: func(t, ex func(string) string) string {
+					// Full results over settled rows only, so they have one
+					// answer while ingest runs; the time bound is unchanged.
+					return fmt.Sprintf("SELECT epoch_us(time_bucket(INTERVAL '1 minute', time)) AS b, count(*), coalesce(sum(seq),0)::BIGINT FROM %s WHERE time >= '%s' AND time < '%s' AND %s GROUP BY b ORDER BY b", t(m), Sl, El, ex(m))
 				}},
 			query{shape: "topn", offset: o.name, kind: kindTopN, meas: m, prunable: true, sel: fixed(ge(s)),
-				from: func(t func(string) string) string {
-					return fmt.Sprintf("SELECT seq FROM %s WHERE %s ORDER BY time DESC, seq DESC LIMIT 50", t(m), where)
+				from: func(t, ex func(string) string) string {
+					return fmt.Sprintf("SELECT seq FROM %s WHERE %s AND %s ORDER BY time DESC, seq DESC LIMIT 50", t(m), where, ex(m))
 				}},
 		)
 		if m2 != "" {
@@ -155,9 +168,10 @@ func buildCorpus(m, m2 string, ref time.Time) []query {
 			s2 := S2.UnixMicro()
 			qs = append(qs, query{shape: "two-measurements", offset: o.name, kind: kindCountSum, meas: m, meas2: m2, prunable: true,
 				sel: fixed(ge(s)), // the second measurement's window is s2; see twoSel
-				from: func(t func(string) string) string {
-					return fmt.Sprintf("SELECT x.c + y.c, x.s + y.s FROM (SELECT count(*) c, coalesce(sum(seq),0)::BIGINT s FROM %s WHERE time >= '%s') x, (SELECT count(*) c, coalesce(sum(seq),0)::BIGINT s FROM %s WHERE time >= '%s') y",
-						t(m), Sl, t(m2), lit(S2))
+				from: func(t, ex func(string) string) string {
+					inner := "count(*) c, coalesce(sum(seq),0)::BIGINT s, count(*) FILTER (WHERE %[1]s) ec, coalesce(sum(seq) FILTER (WHERE %[1]s),0)::BIGINT es"
+					return fmt.Sprintf("SELECT x.c + y.c, x.s + y.s, x.ec + y.ec, x.es + y.es FROM (SELECT %s FROM %s WHERE time >= '%s') x, (SELECT %s FROM %s WHERE time >= '%s') y",
+						fmt.Sprintf(inner, ex(m)), t(m), Sl, fmt.Sprintf(inner, ex(m2)), t(m2), lit(S2))
 				}})
 			qs[len(qs)-1].sel2 = ge(s2)
 		}
@@ -178,8 +192,8 @@ func buildCorpus(m, m2 string, ref time.Time) []query {
 		} {
 			where := form.where
 			qs = append(qs, query{shape: form.shape, offset: name, kind: kindCountSum, meas: m, prunable: true, relative: true, sel: rel,
-				from: func(t func(string) string) string {
-					return fmt.Sprintf("SELECT %s FROM %s WHERE %s", countSum, t(m), where)
+				from: func(t, ex func(string) string) string {
+					return fmt.Sprintf("SELECT %s FROM %s WHERE %s", cs(ex(m)), t(m), where)
 				}})
 		}
 	}

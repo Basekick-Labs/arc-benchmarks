@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -21,8 +22,8 @@ type bucket struct {
 }
 
 type selfTestResult struct {
+	Flavour     string         `json:"flavour"`
 	OK          bool           `json:"ok"`
-	Phantoms    int64          `json:"phantoms_per_measurement"`
 	Required    int            `json:"required_failures"`
 	Missed      int            `json:"missed"`
 	MissedFirst []failure      `json:"missed_first,omitempty"`
@@ -52,7 +53,8 @@ type report struct {
 	LiveHourExact int                `json:"exact_judgements_starting_in_live_hour"`
 	MayMiss       int                `json:"judgements_allowed_to_miss_future_stamped_rows"`
 	BracketZero   float64            `json:"bracket_lower_zero_fraction"`
-	SelfTest      *selfTestResult    `json:"self_test,omitempty"`
+	SelfTest      []*selfTestResult  `json:"self_test,omitempty"`
+	crossedHour   bool
 	failCount     int
 	errCount      int
 }
@@ -98,14 +100,20 @@ func buildReport(c config, j judge, rn *runner, g *generator, start time.Time, c
 			}
 			tallyInto(rep.HourStart, r, v)
 		}
-		if v.class == "live-bracket" {
+		if v.class == "live-exact" {
 			brackets++
-			if v.lower.count == 0 {
+			if v.exp.exactLo.count == 0 {
 				zero++
 			}
 		}
-		if v.class == "live-exact" && v.status == pass && !r.q.start.IsZero() && !r.q.start.Before(r.send.Truncate(time.Hour)) {
+		// Evidence for file pruning: an exact judgement over a window that
+		// starts in the live hour and holds settled rows.
+		if v.status == pass && strings.HasSuffix(v.class, "-exact") && v.exp.exactLo.count > 0 &&
+			!r.q.start.IsZero() && !r.q.start.Before(r.send.Truncate(time.Hour)) {
 			rep.LiveHourExact++
+		}
+		if r.phase == "live" && !r.send.Truncate(time.Hour).Equal(start.Truncate(time.Hour)) {
+			rep.crossedHour = true
 		}
 		if v.mayMiss {
 			rep.MayMiss++
@@ -141,41 +149,58 @@ func tallyInto(b *bucket, r record, v verdict) {
 	}
 }
 
-// selfTest re-judges every passing answer against the ledger plus phantoms.
-// Each judgement whose expected answer the phantoms change must now FAIL; one
-// that still passes is a judgement that was not checking anything.
-func selfTest(j judge, recs []record, start, end time.Time) *selfTestResult {
-	ph, n := j.l.withPhantoms(start.Add(-32*time.Hour), end.Add(20*time.Minute), start)
-	pj := j
-	pj.l = ph
-	st := &selfTestResult{Phantoms: n, ByClass: map[string]int{}}
-	classes := map[string]bool{}
-	for _, r := range recs {
-		v := j.settle(r)
-		if v.status != pass {
-			continue
-		}
-		classes[v.class] = true
-		if !phantomIn(j.l, ph, r, j) {
-			continue
-		}
-		st.Required++
-		st.ByClass[v.class]++
-		if pv := pj.settle(r); pv.status != fail {
-			st.Missed++
-			if len(st.MissedFirst) < 5 {
-				st.MissedFirst = append(st.MissedFirst, failure{SQL: r.sql, Wire: string(r.wire), Header: r.header, Why: "still " + string(pv.status) + " with phantoms", Class: v.class})
+// selfTest re-judges every passing answer against changed ledgers: rows
+// above every real seq, rows below it (inside the exact part), and real rows
+// removed (the upper bound). Each judgement whose expectation a change moves
+// must now FAIL; one that still passes was not checking that part.
+func selfTest(j judge, recs []record, start, end time.Time) []*selfTestResult {
+	from, to := start.Add(-32*time.Hour), end.Add(20*time.Minute)
+	// covers: the judgement classes a flavour must move. High phantoms have
+	// seqs above every settled one, so only the whole count/sum answer sees
+	// them; full results select settled rows only.
+	countSum := func(c string) bool { return strings.HasSuffix(c, "-exact") }
+	every := func(string) bool { return true }
+	flavours := []struct {
+		name   string
+		l      *ledger
+		covers func(class string) bool
+	}{
+		{"high-phantoms", j.l.withHighPhantoms(from, to), countSum},
+		{"low-phantoms", j.l.withLowPhantoms(from, to, start), every},
+		{"removed-rows", j.l.withoutRows(), every},
+	}
+	var out []*selfTestResult
+	for _, f := range flavours {
+		st := &selfTestResult{Flavour: f.name, ByClass: map[string]int{}}
+		classes := map[string]bool{}
+		for _, r := range recs {
+			v := j.settle(r)
+			if v.status != pass {
+				continue
+			}
+			classes[v.class] = true
+			if v.exp.equal(j.expect(f.l, r)) {
+				continue
+			}
+			st.Required++
+			st.ByClass[v.class]++
+			if pv := j.judgeWith(f.l, r); pv.status != fail {
+				st.Missed++
+				if len(st.MissedFirst) < 5 {
+					st.MissedFirst = append(st.MissedFirst, failure{SQL: r.sql, Wire: string(r.wire), Header: r.header, Why: "still " + string(pv.status), Class: v.class})
+				}
 			}
 		}
-	}
-	st.OK = st.Missed == 0 && st.Required > 0
-	for c := range classes {
-		if st.ByClass[c] == 0 {
-			st.OK = false
-			st.Note += fmt.Sprintf("class %s had no judgement the phantoms changed; ", c)
+		st.OK = st.Missed == 0 && st.Required > 0
+		for c := range classes {
+			if f.covers(c) && st.ByClass[c] == 0 {
+				st.OK = false
+				st.Note += fmt.Sprintf("class %s had no judgement this change moved; ", c)
+			}
 		}
+		out = append(out, st)
 	}
-	return st
+	return out
 }
 
 func finalVerdict(c config, rep *report) string {
@@ -183,15 +208,28 @@ func finalVerdict(c config, rep *report) string {
 		rep.Reasons = append(rep.Reasons, fmt.Sprintf("%d wrong answers, %d raw-scan mismatches", rep.failCount, len(rep.RawScanFails)))
 		return "FAIL"
 	}
-	if rep.SelfTest != nil && !rep.SelfTest.OK {
-		rep.Reasons = append(rep.Reasons, "self-test: the judge passed answers it should have failed")
-		return "HARNESS-BROKEN"
+	for _, st := range rep.SelfTest {
+		if !st.OK {
+			rep.Reasons = append(rep.Reasons, "self-test "+st.Flavour+": the judge passed answers it should have failed")
+			return "HARNESS-BROKEN"
+		}
 	}
 	if rep.errCount > 0 {
 		rep.Reasons = append(rep.Reasons, fmt.Sprintf("%d errors", rep.errCount))
 		return "ERROR"
 	}
 	var why []string
+	if len(rep.Dirty) > 0 {
+		why = append(why, fmt.Sprintf("%d measurements had a failed write and were not judged", len(rep.Dirty)))
+	}
+	if total := rep.Totals[string(pass)] + rep.Totals[string(skipped)] + rep.Totals[string(unavailable)]; total > 0 {
+		if f := float64(rep.Totals[string(skipped)]+rep.Totals[string(unavailable)]) / float64(total); f > 0.05 {
+			why = append(why, fmt.Sprintf("%.0f%% of answers were skipped or unavailable", f*100))
+		}
+	}
+	if c.mode == "live" && !rep.crossedHour {
+		why = append(why, "the live run never crossed an hour boundary")
+	}
 	if c.expectFilePruning && rep.Expansions == 0 {
 		why = append(why, "file-time pruning never expanded a glob")
 	}
@@ -203,7 +241,7 @@ func finalVerdict(c config, rep *report) string {
 			why = append(why, fmt.Sprintf("only %d exact judgements started inside the live hour", rep.LiveHourExact))
 		}
 		if rep.BracketZero > 0.5 {
-			why = append(why, fmt.Sprintf("%.0f%% of bracket judgements had a lower bound of 0", rep.BracketZero*100))
+			why = append(why, fmt.Sprintf("%.0f%% of live judgements had no settled rows", rep.BracketZero*100))
 		}
 	}
 	if len(why) > 0 {
@@ -221,12 +259,13 @@ func printReport(rep *report) {
 	if rep.Compacted != nil {
 		fmt.Printf("compaction files compacted: %.0f\n", *rep.Compacted)
 	}
-	if rep.SelfTest != nil {
-		fmt.Printf("self-test ok=%v required=%d missed=%d by class %v %s\n", rep.SelfTest.OK, rep.SelfTest.Required, rep.SelfTest.Missed, rep.SelfTest.ByClass, rep.SelfTest.Note)
-		for _, m := range rep.SelfTest.MissedFirst {
+	for _, st := range rep.SelfTest {
+		fmt.Printf("self-test %s ok=%v required=%d missed=%d by class %v %s\n", st.Flavour, st.OK, st.Required, st.Missed, st.ByClass, st.Note)
+		for _, m := range st.MissedFirst {
 			fmt.Printf("  missed: [%s %s] %s\n", m.Wire, m.Class, m.SQL)
 		}
 	}
+
 	keys := sortedKeys(rep.ByShape)
 	sort.Strings(keys)
 	for _, k := range keys {

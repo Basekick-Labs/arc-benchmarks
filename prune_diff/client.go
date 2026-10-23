@@ -122,7 +122,7 @@ func (a *arcClient) query(ctx context.Context, w wire, sql, db string, header bo
 	case wireArrow:
 		res.rows, res.err = decodeArrow(raw)
 	case wireMsgPack:
-		res.rows, res.err = decodeMsgPack(raw)
+		res.rows, res.marker, res.err = decodeMsgPack(raw)
 	}
 	return res
 }
@@ -200,27 +200,39 @@ func arrowValue(col arrow.Array, i int) string {
 	}
 }
 
-func decodeMsgPack(raw []byte) ([][]string, error) {
+func decodeMsgPack(raw []byte) ([][]string, string, error) {
 	var env map[string]any
 	if err := msgpack.Unmarshal(raw, &env); err != nil {
-		return nil, fmt.Errorf("decode msgpack: %w", err)
+		return nil, "", fmt.Errorf("decode msgpack: %w", err)
 	}
 	if ok, _ := env["success"].(bool); !ok {
-		return nil, fmt.Errorf("query failed: %v", env["error"])
+		return nil, "", fmt.Errorf("query failed: %v", env["error"])
+	}
+	marker := ""
+	if capped, _ := env["rows_capped"].(bool); capped {
+		marker = "rows_capped"
 	}
 	cols, _ := env["data"].([]any)
 	if len(cols) == 0 {
-		return nil, nil
+		return nil, marker, nil
 	}
-	n := len(cols[0].([]any))
-	out := make([][]string, n)
+	// Column-major: data[c][i].
+	first, ok := cols[0].([]any)
+	if !ok {
+		return nil, "", fmt.Errorf("msgpack data column 0 is %T", cols[0])
+	}
+	out := make([][]string, len(first))
 	for i := range out {
 		out[i] = make([]string, len(cols))
 		for c := range cols {
-			out[i][c] = fmt.Sprint(cols[c].([]any)[i])
+			col, ok := cols[c].([]any)
+			if !ok || i >= len(col) {
+				return nil, "", fmt.Errorf("msgpack data column %d is malformed", c)
+			}
+			out[i][c] = fmt.Sprint(col[i])
 		}
 	}
-	return out, nil
+	return out, marker, nil
 }
 
 // metrics scrapes /metrics into name -> value (the families the report
