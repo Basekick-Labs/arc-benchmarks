@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	_ "github.com/duckdb/duckdb-go/v2"
@@ -15,11 +16,20 @@ var pruneMetrics = []string{"arc_query_file_time_pruning_", "arc_ingest_future_s
 
 // runner executes queries one at a time and records them.
 type runner struct {
-	cfg     config
-	arc     *arcClient
+	cfg config
+	// writer is the node writes and flushes go to (the generator's, which
+	// a failover swaps); readers answer the queries, each judged on its own.
+	writer  *atomic.Pointer[arcClient]
+	readers []reader
 	records []record
 	raw     *sql.DB // raw-scan reference, nil without --data-root
 	rawFail []string
+}
+
+// reader is one node queries go to.
+type reader struct {
+	name string
+	c    *arcClient
 }
 
 func (rn *runner) tableRef(header bool) func(string) string {
@@ -51,28 +61,30 @@ func (rn *runner) exec(ctx context.Context, l *ledger, q query, phase string) {
 			// enough to hold the three wires to the same answer.
 			wires = append(wires, wireArrow, wireMsgPack)
 		}
-		for _, w := range wires {
-			before, _ := rn.arc.metrics(ctx, pruneMetrics...)
-			send := time.Now()
-			res := rn.arc.query(ctx, w, sqlText, rn.cfg.db, header)
-			if res.status == 503 && res.retryAfter {
-				time.Sleep(time.Second)
-				send = time.Now()
-				res = rn.arc.query(ctx, w, sqlText, rn.cfg.db, header)
+		for _, rd := range rn.readers {
+			for _, w := range wires {
+				before, _ := rd.c.metrics(ctx, pruneMetrics...)
+				send := time.Now()
+				res := rd.c.query(ctx, w, sqlText, rn.cfg.db, header)
+				if res.status == 503 && res.retryAfter {
+					time.Sleep(time.Second)
+					send = time.Now()
+					res = rd.c.query(ctx, w, sqlText, rn.cfg.db, header)
+				}
+				recv := time.Now()
+				if w == wireMsgPack && res.status == 501 {
+					continue // built without the msgpack endpoint
+				}
+				after, _ := rd.c.metrics(ctx, pruneMetrics...)
+				if n := len(rn.records) + 1; n%200 == 0 {
+					fmt.Printf("%s %d answers recorded (%s/%s)\n", time.Now().Format("15:04:05"), n, q.shape, q.offset)
+				}
+				rn.records = append(rn.records, record{
+					q: q, wire: w, header: header, node: rd.name, sql: sqlText, res: res, send: send, recv: recv, phase: phase, cut: cut, settled: settled,
+					expanded: after["arc_query_file_time_pruning_expanded_total"] - before["arc_query_file_time_pruning_expanded_total"],
+					passes:   after["arc_query_file_time_pruning_passes_total"] - before["arc_query_file_time_pruning_passes_total"],
+				})
 			}
-			recv := time.Now()
-			if w == wireMsgPack && res.status == 501 {
-				continue // built without the msgpack endpoint
-			}
-			after, _ := rn.arc.metrics(ctx, pruneMetrics...)
-			if n := len(rn.records) + 1; n%200 == 0 {
-				fmt.Printf("%s %d answers recorded (%s/%s)\n", time.Now().Format("15:04:05"), n, q.shape, q.offset)
-			}
-			rn.records = append(rn.records, record{
-				q: q, wire: w, header: header, sql: sqlText, res: res, send: send, recv: recv, phase: phase, cut: cut, settled: settled,
-				expanded: after["arc_query_file_time_pruning_expanded_total"] - before["arc_query_file_time_pruning_expanded_total"],
-				passes:   after["arc_query_file_time_pruning_passes_total"] - before["arc_query_file_time_pruning_passes_total"],
-			})
 		}
 	}
 }
@@ -84,7 +96,7 @@ func (rn *runner) clockOffset(ctx context.Context) (time.Duration, time.Duration
 	var off time.Duration
 	for i := 0; i < 5; i++ {
 		send := time.Now()
-		res := rn.arc.query(ctx, wireJSON, "SELECT epoch_us(now())", "", false)
+		res := rn.readers[0].c.query(ctx, wireJSON, "SELECT epoch_us(now())", "", false)
 		recv := time.Now()
 		if res.err != nil || len(res.rows) != 1 {
 			return 0, 0, fmt.Errorf("clock probe: %v %v", res.err, res.rows)
@@ -102,22 +114,24 @@ func (rn *runner) clockOffset(ctx context.Context) (time.Duration, time.Duration
 	return off, best/2 + 5*time.Millisecond, nil
 }
 
-// barrier flushes Arc and waits until an unpruned count of every
-// measurement equals the ledger (plan revision 5).
+// barrier flushes the writer and waits until an unpruned count of every
+// measurement equals the ledger on every reader (plan revision 5).
 func (rn *runner) barrier(ctx context.Context, l *ledger, ms []string) error {
-	deadline := time.Now().Add(2 * time.Minute)
+	deadline := time.Now().Add(3 * time.Minute)
 	for _, m := range ms {
 		want := l.all(m, func(*row) bool { return true })
-		for {
-			_ = rn.arc.flush(ctx)
-			res := rn.arc.query(ctx, wireJSON, fmt.Sprintf("SELECT %s FROM %s.%s", countSum, rn.cfg.db, m), "", false)
-			if res.err == nil && len(res.rows) == 1 && res.rows[0][0] == strconv.FormatInt(want.count, 10) && res.rows[0][1] == strconv.FormatInt(want.sum, 10) {
-				break
+		for _, rd := range rn.readers {
+			for {
+				_ = rn.writer.Load().flush(ctx)
+				res := rd.c.query(ctx, wireJSON, fmt.Sprintf("SELECT %s FROM %s.%s", countSum, rn.cfg.db, m), "", false)
+				if res.err == nil && len(res.rows) == 1 && res.rows[0][0] == strconv.FormatInt(want.count, 10) && res.rows[0][1] == strconv.FormatInt(want.sum, 10) {
+					break
+				}
+				if time.Now().After(deadline) {
+					return fmt.Errorf("barrier: %s on %s never reached the ledger (count=%d sum=%d), last answer %v %v", m, rd.name, want.count, want.sum, res.rows, res.err)
+				}
+				time.Sleep(500 * time.Millisecond)
 			}
-			if time.Now().After(deadline) {
-				return fmt.Errorf("barrier: %s never reached the ledger (count=%d sum=%d), last answer %v %v", m, want.count, want.sum, res.rows, res.err)
-			}
-			time.Sleep(500 * time.Millisecond)
 		}
 	}
 	return nil

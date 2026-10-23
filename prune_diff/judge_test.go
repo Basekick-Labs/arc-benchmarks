@@ -283,3 +283,30 @@ func TestLatencyStats(t *testing.T) {
 		t.Fatalf("%+v", got)
 	}
 }
+
+// The DELETE-concurrent judge: an answer may show the total before or after
+// a DELETE that could be visible to it; an empty 200 never passes.
+func TestDeleteCellJudge(t *testing.T) {
+	d := &deleteCell{perHour: []tally{{10, 100}, {10, 200}, {10, 300}}}
+	lag := 4 * time.Second
+	del := base.Add(time.Minute)
+	d.deletes = []deleteStep{{sent: del, done: del.Add(time.Second)}}
+	before, after := d.total(0), d.total(1)
+	at := func(send time.Time, status int, tl tally, empty bool) deleteCheck {
+		return deleteCheck{node: "r", send: send, recv: send.Add(10 * time.Millisecond), status: status, count: tl.count, sum: tl.sum, empty: empty}
+	}
+	d.checks = []deleteCheck{
+		at(base, 200, before, false),                   // before the DELETE: pass
+		at(del.Add(2*time.Second), 200, before, false), // just done, within the lag: either total
+		at(del.Add(2*time.Second), 200, after, false),  // pass
+		at(del.Add(time.Minute), 200, after, false),    // pass
+		at(del.Add(time.Minute), 200, before, false),   // the deleted rows back after the lag: FAIL
+		at(del.Add(time.Minute), 200, tally{}, true),   // empty 200: FAIL
+		at(del.Add(time.Minute), 503, tally{}, false),  // retryable: counted apart
+		at(base, 200, tally{30, 601}, false),           // a total no state has: FAIL
+	}
+	rep := d.judge(lag)
+	if rep.Pass != 4 || rep.Fail != 3 || rep.Unavailable != 1 {
+		t.Fatalf("%+v", rep)
+	}
+}

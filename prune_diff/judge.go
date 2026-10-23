@@ -10,7 +10,8 @@ import (
 type record struct {
 	q      query
 	wire   wire
-	header bool // bare table with x-arc-database, or db.m without
+	header bool   // bare table with x-arc-database, or db.m without
+	node   string // the reader that answered
 	sql    string
 	res    result
 	send   time.Time

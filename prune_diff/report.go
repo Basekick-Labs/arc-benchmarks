@@ -62,7 +62,12 @@ type report struct {
 	// Latency of answered queries (status 200), by wire, and by wire for
 	// windows starting in the live hour (what file pruning can narrow) and
 	// for queries sent in minutes 0-6 of an hour. For on/off A/B runs.
-	Latency     map[string]latencyStat `json:"latency_ms,omitempty"`
+	Latency map[string]latencyStat `json:"latency_ms,omitempty"`
+	// ByNode: verdicts per reader (M5 queries a pruning-on and a pruning-off
+	// reader with the same SQL).
+	ByNode      map[string]map[string]int `json:"by_node,omitempty"`
+	Failover    *failoverResult           `json:"failover,omitempty"`
+	Deletes     *deleteReport             `json:"deletes,omitempty"`
 	crossedHour bool
 	failCount   int
 	errCount    int
@@ -93,6 +98,15 @@ func buildReport(c config, j judge, rn *runner, g *generator, start time.Time, c
 	for i, r := range rn.records {
 		v := verdicts[i]
 		rep.Totals[string(v.status)]++
+		if r.node != "" {
+			if rep.ByNode == nil {
+				rep.ByNode = map[string]map[string]int{}
+			}
+			if rep.ByNode[r.node] == nil {
+				rep.ByNode[r.node] = map[string]int{}
+			}
+			rep.ByNode[r.node][string(v.status)]++
+		}
 		if v.class != "" {
 			rep.ByClass[v.class+"/"+string(v.status)]++
 		}
@@ -307,6 +321,10 @@ func latencyStats(lat map[string][]time.Duration) map[string]latencyStat {
 }
 
 func finalVerdict(c config, rep *report) string {
+	if rep.Deletes != nil && rep.Deletes.Fail > 0 {
+		rep.Reasons = append(rep.Reasons, fmt.Sprintf("%d DELETE-concurrent answers outside the totals (empty 200s or errors included)", rep.Deletes.Fail))
+		return "FAIL"
+	}
 	if rep.failCount > 0 || len(rep.RawScanFails) > 0 {
 		rep.Reasons = append(rep.Reasons, fmt.Sprintf("%d wrong answers, %d raw-scan mismatches", rep.failCount, len(rep.RawScanFails)))
 		return "FAIL"
@@ -316,6 +334,18 @@ func finalVerdict(c config, rep *report) string {
 			rep.Reasons = append(rep.Reasons, "self-test "+st.Flavour+": the judge passed answers it should have failed")
 			return "HARNESS-BROKEN"
 		}
+	}
+	if rep.Failover != nil && rep.Failover.Err != "" {
+		rep.Reasons = append(rep.Reasons, "failover: "+rep.Failover.Err)
+		return "ERROR"
+	}
+	if c.failoverAt >= 0 && rep.Failover == nil {
+		rep.Reasons = append(rep.Reasons, "the failover never ran")
+		return "INCONCLUSIVE"
+	}
+	if c.deleteEvery > 0 && (rep.Deletes == nil || rep.Deletes.Deletes == 0) {
+		rep.Reasons = append(rep.Reasons, "no DELETE ran")
+		return "INCONCLUSIVE"
 	}
 	if rep.errCount > 0 {
 		rep.Reasons = append(rep.Reasons, fmt.Sprintf("%d errors", rep.errCount))
@@ -358,6 +388,15 @@ func printReport(rep *report) {
 	fmt.Printf("\n== prune_diff %s: %s %v\n", rep.Mode, rep.Verdict, rep.Reasons)
 	fmt.Printf("writes %d (failed %d), rows %d, totals %v\n", rep.Writes, rep.WriteFails, rep.Rows, rep.Totals)
 	fmt.Printf("by class %v\n", rep.ByClass)
+	for _, n := range sortedKeys(rep.ByNode) {
+		fmt.Printf("node %s: %v\n", n, rep.ByNode[n])
+	}
+	if rep.Failover != nil {
+		fmt.Printf("failover at %s, writes paused %s %s\n", rep.Failover.At, rep.Failover.Downtime, rep.Failover.Err)
+	}
+	if rep.Deletes != nil {
+		fmt.Printf("deletes %d, checks %d: pass %d, 503 %d, FAIL %d %v\n", rep.Deletes.Deletes, rep.Deletes.Checks, rep.Deletes.Pass, rep.Deletes.Unavailable, rep.Deletes.Fail, rep.Deletes.Failures)
+	}
 	for _, k := range sortedKeys(rep.Latency) {
 		l := rep.Latency[k]
 		fmt.Printf("latency %-22s n=%-6d p50 %7.1f ms  p90 %7.1f  p99 %7.1f  max %7.1f\n", k, l.N, l.P50, l.P90, l.P99, l.Max)

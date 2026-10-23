@@ -41,6 +41,7 @@ import (
 	"os/signal"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -62,6 +63,16 @@ type config struct {
 	margin                      time.Duration
 	selfTest                    bool
 	waitForHour                 bool
+	// M5 (cluster): queries to these readers instead of --arc; writes and
+	// flushes stay on --arc.
+	queryURLs []string
+	// Quiescent failover: at minute failoverAt of the first hour after
+	// start+10m, pause writes, barrier, run failoverCmd, resume on arcAfter.
+	failoverAt  int
+	failoverCmd string
+	arcAfter    string
+	// DELETE-concurrent check on md, one DELETE every deleteEvery (0: off).
+	deleteEvery time.Duration
 }
 
 func main() {
@@ -85,7 +96,17 @@ func main() {
 	flag.BoolVar(&c.expectFilePruning, "expect-file-pruning", false, "Arc runs with query.file_time_pruning on: zero expansions is INCONCLUSIVE")
 	flag.BoolVar(&c.selfTest, "self-test", true, "re-judge every answer against phantom rows; each must FAIL")
 	flag.BoolVar(&c.waitForHour, "wait", true, "wait for a run shape that proves something instead of refusing")
+	queryURL := flag.String("query-url", "", "comma-separated name=url readers to query (default: --arc); each answer is judged on its own")
+	flag.IntVar(&c.failoverAt, "failover-at", -1, "live: minute of the hour to kill the writer (needs --failover-cmd and --arc-after)")
+	flag.StringVar(&c.failoverCmd, "failover-cmd", "", "shell command that kills the writer")
+	flag.StringVar(&c.arcAfter, "arc-after", "", "the writer to resume writes on after the failover")
+	flag.DurationVar(&c.deleteEvery, "delete-every", 0, "live: DELETE one hour of measurement md every interval while querying its total on every reader")
 	flag.Parse()
+	for _, kv := range strings.Split(*queryURL, ",") {
+		if kv = strings.TrimSpace(kv); kv != "" {
+			c.queryURLs = append(c.queryURLs, kv)
+		}
+	}
 	if c.compactorURL == "" {
 		c.compactorURL = c.arcURL
 	}
@@ -93,6 +114,9 @@ func main() {
 	defer stop()
 	os.Exit(run(ctx, c))
 }
+
+// foResult is the failover's outcome, set by its goroutine before bg.Wait.
+var foResult *failoverResult
 
 func run(ctx context.Context, c config) int {
 	if c.compaction && c.dataRoot != "" {
@@ -103,8 +127,25 @@ func run(ctx context.Context, c config) int {
 		fmt.Println("refusing: a compaction-on run must last more than 70 minutes after the seed (hourly compaction skips hours with files newer than 1 h)")
 		return 2
 	}
+	if c.failoverAt >= 0 && (c.mode != "live" || c.failoverCmd == "" || c.arcAfter == "") {
+		fmt.Println("refusing: --failover-at needs --mode live, --failover-cmd and --arc-after")
+		return 2
+	}
 	arc := newArcClient(c.arcURL, c.token)
-	rn := &runner{cfg: c, arc: arc}
+	l := newLedger()
+	g := &generator{db: c.db, ledger: l}
+	g.w.Store(arc)
+	rn := &runner{cfg: c, writer: &g.w}
+	if len(c.queryURLs) == 0 {
+		rn.readers = []reader{{name: "arc", c: arc}}
+	}
+	for i, kv := range c.queryURLs {
+		name, u, ok := strings.Cut(kv, "=")
+		if !ok {
+			name, u = fmt.Sprintf("r%d", i), kv
+		}
+		rn.readers = append(rn.readers, reader{name: name, c: newArcClient(u, c.token)})
+	}
 	if err := precheck(ctx, arc, c.db); err != nil {
 		fmt.Println("refusing:", err)
 		return 2
@@ -134,8 +175,6 @@ func run(ctx context.Context, c config) int {
 	}
 	fmt.Printf("clock offset %v ± %v\n", off, tol)
 
-	l := newLedger()
-	g := &generator{arc: arc, db: c.db, ledger: l}
 	rng := rand.New(rand.NewSource(c.seed))
 	ms := []string{"m0", "m1", "m2"}
 	heavy := "m0"
@@ -152,6 +191,14 @@ func run(ctx context.Context, c config) int {
 	all := append([]string(nil), ms...)
 	if c.compaction {
 		all = append(all, "mc")
+	}
+	var dc *deleteCell
+	if c.deleteEvery > 0 {
+		dc = &deleteCell{}
+		if err := dc.seed(ctx, g, start, rng); err != nil {
+			fmt.Println(err)
+			return 2
+		}
 	}
 	compBefore, _ := newArcClient(c.compactorURL, c.token).metrics(ctx, "arc_compaction_files_compacted_total")
 
@@ -179,13 +226,26 @@ func run(ctx context.Context, c config) int {
 	case "live":
 		// The seed's rows on disk before the first query: a measurement
 		// with no file yet answers count(*) with no row at all.
-		if err := rn.barrier(ctx, l, all); err != nil {
+		seeded := all
+		if dc != nil {
+			seeded = append(append([]string(nil), all...), deleteMeasurement)
+		}
+		if err := rn.barrier(ctx, l, seeded); err != nil {
 			fmt.Println(err)
 			return 2
 		}
 		ictx, cancel := context.WithTimeout(ctx, c.duration)
 		done := make(chan struct{})
 		go func() { g.run(ictx, ms, heavy, c.interval, c.heavyBatch, c.seed); close(done) }()
+		var bg sync.WaitGroup
+		if c.failoverAt >= 0 {
+			bg.Add(1)
+			go func() { defer bg.Done(); foResult = failover(ictx, c, g, rn, l, all, start) }()
+		}
+		if dc != nil {
+			bg.Add(1)
+			go func() { defer bg.Done(); dc.run(ictx, g, c.db, c.deleteEvery) }()
+		}
 		for ictx.Err() == nil {
 			ref := time.Now()
 			for _, m := range all {
@@ -197,10 +257,14 @@ func run(ctx context.Context, c config) int {
 					// judged only when its row set is settled.
 					rn.exec(ctx, l, q, "live")
 				}
+				if dc != nil {
+					dc.check(ctx, rn)
+				}
 			}
 		}
 		cancel()
 		<-done
+		bg.Wait()
 	default:
 		fmt.Println("unknown --mode", c.mode)
 		return 2
@@ -209,6 +273,10 @@ func run(ctx context.Context, c config) int {
 	compacted, compKnown := delta(compBefore, compAfter, "arc_compaction_files_compacted_total")
 
 	rep := buildReport(c, j, rn, g, start, compacted, compKnown)
+	rep.Failover = foResult
+	if dc != nil {
+		rep.Deletes = dc.judge(c.lag)
+	}
 	if c.selfTest {
 		rep.SelfTest = selfTest(j, rn.records, start, time.Now())
 	}
