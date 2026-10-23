@@ -169,3 +169,22 @@ func TestSelfTestFlavours(t *testing.T) {
 		}
 	}
 }
+
+// A change that moves an expectation without failing the answer is a miss:
+// here a row that only widens the upper bound (in flight at the query) keeps
+// the old answer passing, and the self-test must say so.
+func TestSelfTestReportsAMiss(t *testing.T) {
+	l := newLedger()
+	l.sent("m0", rowsAt(10, base))
+	j := judge{l: l, lag: 4 * time.Second}
+	q := geQuery(base.Add(2 * time.Minute))
+	send := base.Add(time.Hour)
+	r := rec(l, q, "live", send, j.lag, answer(8, 52, 8, 52))
+	inFlight := l.mutate(func(m string, rs []*row) []*row {
+		return append(rs, &row{seq: 999, tsUs: base.Add(30 * time.Minute).UnixMicro(), sentAt: send.Add(-time.Second)})
+	})
+	st := selfTestWith(j, []record{r}, []flavour{{"in-flight", inFlight, func(string) bool { return true }}})[0]
+	if st.OK || st.Missed != 1 {
+		t.Fatalf("a moved expectation that still passes must be a miss: %+v", st)
+	}
+}

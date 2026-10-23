@@ -160,15 +160,21 @@ func selfTest(j judge, recs []record, start, end time.Time) []*selfTestResult {
 	// them; full results select settled rows only.
 	countSum := func(c string) bool { return strings.HasSuffix(c, "-exact") }
 	every := func(string) bool { return true }
-	flavours := []struct {
-		name   string
-		l      *ledger
-		covers func(class string) bool
-	}{
+	return selfTestWith(j, recs, []flavour{
 		{"high-phantoms", j.l.withHighPhantoms(from, to), countSum},
 		{"low-phantoms", j.l.withLowPhantoms(from, to, start), every},
 		{"removed-rows", j.l.withoutRows(), every},
-	}
+	})
+}
+
+// flavour is one changed ledger and the classes it must move.
+type flavour struct {
+	name   string
+	l      *ledger
+	covers func(class string) bool
+}
+
+func selfTestWith(j judge, recs []record, flavours []flavour) []*selfTestResult {
 	var out []*selfTestResult
 	for _, f := range flavours {
 		st := &selfTestResult{Flavour: f.name, ByClass: map[string]int{}}
