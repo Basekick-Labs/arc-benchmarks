@@ -82,7 +82,7 @@ func (g *generator) batch(m string, n int, ts func() time.Time, rng *rand.Rand) 
 		}
 		fmt.Fprintf(&buf, "%s,host=h%d seq=%di,fut=%di,v=%s,end_time=\"%s\" %d\n", m, r.host, r.seq, fut, strconv.FormatFloat(rng.Float64()*100, 'f', 3, 64), lit(t.Add(2*time.Hour)), r.tsUs)
 	}
-	return rs, buf.Bytes()
+	return group(rs), buf.Bytes()
 }
 
 // write sends one batch; the ledger learns it before the request goes out,
@@ -188,4 +188,35 @@ func (g *generator) seedCompaction(ctx context.Context, m string, now time.Time,
 		return fmt.Errorf("compaction seed: %s", why)
 	}
 	return nil
+}
+
+// group folds rows that share a time, host and future flag into one ledger
+// entry (see row).
+func group(rs []*row) []*row {
+	type key struct {
+		ts   int64
+		host int
+		fut  bool
+	}
+	idx := map[key]*row{}
+	var out []*row
+	for _, r := range rs {
+		k := key{r.tsUs, r.host, r.fut}
+		g := idx[k]
+		if g == nil {
+			idx[k] = r
+			out = append(out, r)
+			continue
+		}
+		if g.n == 0 {
+			g.n, g.sum, g.seqs = 1, g.seq, []int64{g.seq}
+		}
+		g.n++
+		g.sum += r.seq
+		g.seqs = append(g.seqs, r.seq)
+		if r.seq > g.seq {
+			g.seq = r.seq
+		}
+	}
+	return out
 }

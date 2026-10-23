@@ -5,11 +5,17 @@ import (
 	"time"
 )
 
-// row is one generated row. seq is globally unique, so count and sum(seq)
-// over a set identify it exactly.
+// row is one generated row, or a group of rows one write stamped with the
+// same time and host (the heavy measurement writes hundreds per instant):
+// seq is then the group's newest seq, and n, sum and seqs describe the
+// rest. seq is globally unique, so count and sum(seq) over a set identify
+// it exactly. Grouping keeps judging linear in writes, not rows.
 type row struct {
 	seq  int64
-	tsUs int64 // row timestamp, microseconds since the epoch
+	n    int64   // rows in the group; 0 means one
+	sum  int64   // sum of the group's seqs (n > 0)
+	seqs []int64 // the group's seqs (n > 0)
+	tsUs int64   // row timestamp, microseconds since the epoch
 	host int
 	// fut: stamped after the write that carried it (field fut=1).
 	fut bool
@@ -71,7 +77,28 @@ type tally struct {
 	sum   int64
 }
 
-func (t *tally) add(r *row) { t.count++; t.sum += r.seq }
+func (t *tally) add(r *row) { t.count += r.count(); t.sum += r.seqSum() }
+
+func (r *row) count() int64 {
+	if r.n > 0 {
+		return r.n
+	}
+	return 1
+}
+
+func (r *row) seqSum() int64 {
+	if r.n > 0 {
+		return r.sum
+	}
+	return r.seq
+}
+
+func (r *row) allSeqs() []int64 {
+	if r.n > 0 {
+		return r.seqs
+	}
+	return []int64{r.seq}
+}
 
 // ackedBy reports rows acked at or before cutoff: certainly flushed by a
 // request sent at cutoff + the visibility lag.

@@ -211,8 +211,8 @@ func expectRows(k kind, rs []*row) [][]string {
 			if bs[k] == nil {
 				bs[k] = &b{}
 			}
-			bs[k].c++
-			bs[k].s += r.seq
+			bs[k].c += r.count()
+			bs[k].s += r.seqSum()
 		}
 		keys := make([]int64, 0, len(bs))
 		for k := range bs {
@@ -225,18 +225,25 @@ func expectRows(k kind, rs []*row) [][]string {
 		}
 		return out
 	case kindTopN:
-		sort.Slice(rs, func(i, j int) bool {
-			if rs[i].tsUs != rs[j].tsUs {
-				return rs[i].tsUs > rs[j].tsUs
+		type one struct{ ts, seq int64 }
+		var all []one
+		for _, r := range rs {
+			for _, q := range r.allSeqs() {
+				all = append(all, one{r.tsUs, q})
 			}
-			return rs[i].seq > rs[j].seq
-		})
-		if len(rs) > 50 {
-			rs = rs[:50]
 		}
-		out := make([][]string, len(rs))
-		for i, r := range rs {
-			out[i] = []string{strconv.FormatInt(r.seq, 10)}
+		sort.Slice(all, func(i, j int) bool {
+			if all[i].ts != all[j].ts {
+				return all[i].ts > all[j].ts
+			}
+			return all[i].seq > all[j].seq
+		})
+		if len(all) > 50 {
+			all = all[:50]
+		}
+		out := make([][]string, len(all))
+		for i, o := range all {
+			out[i] = []string{strconv.FormatInt(o.seq, 10)}
 		}
 		return out
 	}

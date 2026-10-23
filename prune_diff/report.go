@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	"runtime"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -79,8 +81,9 @@ func buildReport(c config, j judge, rn *runner, g *generator, start time.Time, c
 		rep.Compacted = &compacted
 	}
 	brackets, zero := 0, 0
-	for _, r := range rn.records {
-		v := j.settle(r)
+	verdicts := settleAll(j, rn.records)
+	for i, r := range rn.records {
+		v := verdicts[i]
 		rep.Totals[string(v.status)]++
 		if v.class != "" {
 			rep.ByClass[v.class+"/"+string(v.status)]++
@@ -176,21 +179,33 @@ type flavour struct {
 
 func selfTestWith(j judge, recs []record, flavours []flavour) []*selfTestResult {
 	var out []*selfTestResult
+	verdicts := settleAll(j, recs)
 	for _, f := range flavours {
 		st := &selfTestResult{Flavour: f.name, ByClass: map[string]int{}}
 		classes := map[string]bool{}
-		for _, r := range recs {
-			v := j.settle(r)
+		// moved[i]: the change moved record i's expectation; judged[i]: its
+		// answer against the changed ledger. Computed in parallel.
+		moved := make([]bool, len(recs))
+		judged := make([]verdict, len(recs))
+		parallel(len(recs), func(i int) {
+			if verdicts[i].status != pass || verdicts[i].exp.equal(j.expect(f.l, recs[i])) {
+				return
+			}
+			moved[i] = true
+			judged[i] = j.judgeWith(f.l, recs[i])
+		})
+		for i, r := range recs {
+			v := verdicts[i]
 			if v.status != pass {
 				continue
 			}
 			classes[v.class] = true
-			if v.exp.equal(j.expect(f.l, r)) {
+			if !moved[i] {
 				continue
 			}
 			st.Required++
 			st.ByClass[v.class]++
-			if pv := j.judgeWith(f.l, r); pv.status != fail {
+			if pv := judged[i]; pv.status != fail {
 				st.Missed++
 				if len(st.MissedFirst) < 5 {
 					st.MissedFirst = append(st.MissedFirst, failure{SQL: r.sql, Wire: string(r.wire), Header: r.header, Why: "still " + string(pv.status), Class: v.class})
@@ -287,4 +302,31 @@ func printReport(rep *report) {
 	for _, f := range rep.RawScanFails {
 		fmt.Println("  raw:", f)
 	}
+}
+
+// settleAll judges every record, in parallel: judging is linear in ledger
+// entries per record, and a long live run has tens of thousands of each.
+func settleAll(j judge, recs []record) []verdict {
+	out := make([]verdict, len(recs))
+	parallel(len(recs), func(i int) { out[i] = j.settle(recs[i]) })
+	return out
+}
+
+func parallel(n int, f func(i int)) {
+	var wg sync.WaitGroup
+	next := make(chan int)
+	for w := 0; w < runtime.NumCPU(); w++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for i := range next {
+				f(i)
+			}
+		}()
+	}
+	for i := 0; i < n; i++ {
+		next <- i
+	}
+	close(next)
+	wg.Wait()
 }

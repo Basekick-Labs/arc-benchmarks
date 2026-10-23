@@ -188,3 +188,33 @@ func TestSelfTestReportsAMiss(t *testing.T) {
 		t.Fatalf("a moved expectation that still passes must be a miss: %+v", st)
 	}
 }
+
+// A write's rows grouped by time and host judge exactly like the rows one
+// by one (the heavy measurement's 600-row writes).
+func TestGroupedRowsJudgeLikeSingleRows(t *testing.T) {
+	var single []*row
+	for i := 0; i < 12; i++ {
+		single = append(single, &row{seq: int64(i + 1), tsUs: base.Add(time.Duration(i%3) * time.Minute).UnixMicro(), host: i % 2, sentAt: base, ackedAt: base})
+	}
+	var copied []*row
+	for _, r := range single {
+		c := *r
+		copied = append(copied, &c)
+	}
+	grouped := group(copied)
+	if len(grouped) != 6 {
+		t.Fatalf("groups = %d, want 6", len(grouped))
+	}
+	ls, lg := newLedger(), newLedger()
+	ls.sent("m0", single)
+	lg.sent("m0", grouped)
+	for _, k := range []kind{kindBuckets, kindTopN} {
+		if !sameRows(expectRows(k, single), expectRows(k, grouped)) {
+			t.Fatalf("kind %d: grouped %v, single %v", k, expectRows(k, grouped), expectRows(k, single))
+		}
+	}
+	sel := ge(base.Add(time.Minute).UnixMicro())
+	if ls.all("m0", sel) != lg.all("m0", sel) || ls.maxSettled("m0", base) != lg.maxSettled("m0", base) {
+		t.Fatal("grouped tallies differ")
+	}
+}
