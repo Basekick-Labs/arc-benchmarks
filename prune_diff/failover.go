@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os/exec"
+	"strings"
 	"time"
 )
 
@@ -41,6 +42,13 @@ func failover(ctx context.Context, c config, g *generator, rn *runner, l *ledger
 		res.Err = fmt.Sprintf("failover command: %v: %s", err, out)
 		return res
 	}
+	// A command that exits 0 without killing anything (a stale pid file)
+	// would leave every writer up, and the cell would pass without a
+	// failover. The old writer must stop answering.
+	if !writerGone(ctx, c.arcURL, 30*time.Second) {
+		res.Err = "the old writer " + c.arcURL + " still answers /health 30s after the failover command: nothing failed over"
+		return res
+	}
 	after := newArcClient(c.arcAfter, c.token)
 	probe := []byte("failover_probe,host=h0 v=1i\n")
 	deadline := time.Now().Add(8 * time.Minute)
@@ -59,4 +67,25 @@ func failover(ctx context.Context, c config, g *generator, rn *runner, l *ledger
 	res.Downtime = time.Since(paused).Round(time.Second).String()
 	fmt.Printf("%s failover done: writes resumed on %s after %s\n", time.Now().Format("15:04:05"), c.arcAfter, res.Downtime)
 	return res
+}
+
+// writerGone reports whether base stops answering /health within wait.
+func writerGone(ctx context.Context, base string, wait time.Duration) bool {
+	hc := &http.Client{Timeout: 2 * time.Second}
+	deadline := time.Now().Add(wait)
+	for {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, strings.TrimRight(base, "/")+"/health", nil)
+		if err != nil {
+			return false
+		}
+		resp, err := hc.Do(req)
+		if err != nil {
+			return true
+		}
+		resp.Body.Close()
+		if time.Now().After(deadline) || ctx.Err() != nil {
+			return false
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
 }
