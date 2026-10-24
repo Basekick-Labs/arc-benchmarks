@@ -55,7 +55,11 @@ func pickScenario(rng *rand.Rand) scenario {
 
 // generator writes rows to Arc and records them in the ledger.
 type generator struct {
-	arc      *arcClient
+	// w is the node writes go to; a failover swaps it (failover.go).
+	w atomic.Pointer[arcClient]
+	// pause: every write holds it shared; a failover takes it exclusively,
+	// so no write is in flight while the writer is killed.
+	pause    sync.RWMutex
 	db       string
 	ledger   *ledger
 	seq      atomic.Int64
@@ -92,8 +96,10 @@ func (g *generator) write(ctx context.Context, m string, rs []*row, body []byte)
 	for _, r := range rs {
 		r.sentAt = sent
 	}
+	g.pause.RLock()
+	defer g.pause.RUnlock()
 	g.ledger.sent(m, rs)
-	code, msg, err := g.arc.writeLP(ctx, g.db, body)
+	code, msg, err := g.w.Load().writeLP(ctx, g.db, body)
 	g.writes.Add(1)
 	if err != nil || code != http.StatusNoContent {
 		g.failures.Add(1)
@@ -179,7 +185,7 @@ func (g *generator) seedCompaction(ctx context.Context, m string, now time.Time,
 			rs, body := g.batch(m, 20, func() time.Time { return base.Add(time.Duration(rng.Int63n(int64(time.Hour)))) }, rng)
 			g.write(ctx, m, rs, body)
 		}
-		if err := g.arc.flush(ctx); err != nil {
+		if err := g.w.Load().flush(ctx); err != nil {
 			return err
 		}
 		time.Sleep(1100 * time.Millisecond) // distinct flush file names

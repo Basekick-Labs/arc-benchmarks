@@ -35,8 +35,13 @@ type query struct {
 	relative bool
 	// start is a literal window's start (zero for a relative one).
 	start time.Time
-	// prunable is false for shapes Arc must not prune (their answer must
-	// still be right).
+	// span is a relative window's length: its start is Arc's now() - span.
+	span time.Duration
+	// prunable: Arc's time-range scanner narrows this shape, so a live-hour
+	// window reaches the file-time pass. False for shapes Arc must not prune
+	// (OR) and for shapes it refuses and reads whole (NOT, arithmetic, a
+	// subquery, a CTE, two tables, a bound only on end_time). Every answer
+	// must be right either way.
 	prunable bool
 }
 
@@ -70,6 +75,7 @@ func and(ms ...match) match {
 	}
 }
 func or(a, b match) match { return func(r *row) bool { return a(r) || b(r) } }
+func not(m match) match   { return func(r *row) bool { return !m(r) } }
 func lt(e int64) match    { return func(r *row) bool { return r.tsUs < e } }
 func le(e int64) match    { return func(r *row) bool { return r.tsUs <= e } }
 func hostIn(h ...int) match {
@@ -96,8 +102,13 @@ const countSum = "count(*), coalesce(sum(seq),0)::BIGINT"
 // right answer, so it is compared exactly, and an in-flight or future row
 // cannot make up for a dropped one (review B1/B2). The WHERE clause is the
 // shape's own, so pruning sees the same query.
+//
+// The exact part is written with count_if and CASE, not FILTER (WHERE ...):
+// Arc's time-range scanner refuses a query with a second WHERE keyword, so a
+// FILTER clause turned pruning off for every count/sum query and the harness
+// tested almost none of it.
 func cs(ex string) string {
-	return fmt.Sprintf("count(*), coalesce(sum(seq),0)::BIGINT, count(*) FILTER (WHERE %s), coalesce(sum(seq) FILTER (WHERE %s),0)::BIGINT", ex, ex)
+	return fmt.Sprintf("count(*), coalesce(sum(seq),0)::BIGINT, coalesce(count_if(%s),0)::BIGINT, coalesce(sum(CASE WHEN %s THEN seq ELSE 0 END),0)::BIGINT", ex, ex)
 }
 
 // buildCorpus returns every query for measurement m (and m2 for the
@@ -130,25 +141,25 @@ func buildCorpus(m, m2 string, ref time.Time) []query {
 		add("host-or", o.name, true, fmt.Sprintf("time >= '%s' AND (host = 'h1' OR host = 'h2')", Sl), and(ge(s), hostIn(1, 2)))
 		// Shapes Arc must not narrow by time.
 		add("or-time", o.name, false, fmt.Sprintf("(time >= '%s' OR host = 'h3')", Sl), or(ge(s), hostIn(3)))
-		add("not", o.name, true, fmt.Sprintf("NOT (time < '%s')", Sl), ge(s))
+		add("not", o.name, false, fmt.Sprintf("NOT (time < '%s')", Sl), ge(s))
 		hourBack := S.Add(-time.Hour).UnixMicro()
-		add("arith", o.name, true, fmt.Sprintf("time >= '%s'::timestamp - INTERVAL '1 hour'", Sl), ge(hourBack))
+		add("arith", o.name, false, fmt.Sprintf("time >= '%s'::timestamp - INTERVAL '1 hour'", Sl), ge(hourBack))
 		// An inclusive end exactly on the next hour's first instant (seeded).
 		H := S.Truncate(time.Hour).Add(time.Hour)
 		add("le-hour-edge", o.name, true, fmt.Sprintf("time >= '%s' AND time <= '%s'", Sl, lit(H)), and(ge(s), le(H.UnixMicro())))
 		// A column whose name ends in "time" is not the time column.
 		endS := S.Add(-2 * time.Hour).UnixMicro()
-		add("end-time", o.name, true, fmt.Sprintf("end_time >= '%s'", Sl), ge(endS))
+		add("end-time", o.name, false, fmt.Sprintf("end_time >= '%s'", Sl), ge(endS))
 		add("like-interval", o.name, true, fmt.Sprintf("host NOT LIKE '%%INTERVAL 1 HOUR%%' AND time >= '%s'", Sl), ge(s))
 
 		// Wrapped forms.
 		where := fmt.Sprintf("time >= '%s'", Sl)
 		qs = append(qs,
-			query{shape: "subquery", offset: o.name, kind: kindCountSum, meas: m, prunable: true, sel: fixed(ge(s)),
+			query{shape: "subquery", offset: o.name, kind: kindCountSum, meas: m, prunable: false, sel: fixed(ge(s)),
 				from: func(t, ex func(string) string) string {
 					return fmt.Sprintf("SELECT %s FROM (SELECT * FROM %s WHERE %s) sub", cs(ex(m)), t(m), where)
 				}},
-			query{shape: "cte", offset: o.name, kind: kindCountSum, meas: m, prunable: true, sel: fixed(ge(s)),
+			query{shape: "cte", offset: o.name, kind: kindCountSum, meas: m, prunable: false, sel: fixed(ge(s)),
 				from: func(t, ex func(string) string) string {
 					return fmt.Sprintf("WITH w AS (SELECT * FROM %s WHERE %s) SELECT %s FROM w", t(m), where, cs(ex(m)))
 				}},
@@ -163,13 +174,66 @@ func buildCorpus(m, m2 string, ref time.Time) []query {
 					return fmt.Sprintf("SELECT seq FROM %s WHERE %s AND %s ORDER BY time DESC, seq DESC LIMIT 50", t(m), where, ex(m))
 				}},
 		)
+		// Shapes where two parts of one query carry different lower bounds
+		// (#659 coverage gap). Each is built so that a pruner applying the
+		// LATER bound to the part with the earlier one drops rows, and the
+		// later bound sits in the same hour when the earlier one does, the
+		// case plain partition pruning cannot catch (#1360's class). Arc
+		// reads no range from a JOIN, UNION or subquery today, so these
+		// guard that refusal: a scanner that starts reading them must get
+		// each part's own bound.
+		// The gap exceeds the default 300 s margin, so a pruner that applies
+		// L to every part really drops files holding rows in [S, L - margin).
+		L := S.Add(10 * time.Minute)
+		if L.Truncate(time.Hour) != S.Truncate(time.Hour) {
+			L = S.Truncate(time.Hour).Add(time.Hour - time.Microsecond)
+		}
+		Ll, l := lit(L), L.UnixMicro()
+		qs = append(qs,
+			// An aliased bound on the only table: Arc's scanner reads a
+			// qualified time column, so this one is pruned.
+			query{shape: "alias", offset: o.name, kind: kindCountSum, meas: m, prunable: true, sel: fixed(ge(s)),
+				from: func(t, ex func(string) string) string {
+					return fmt.Sprintf("SELECT %s FROM %s a WHERE a.time >= '%s'", cs(ex(m)), t(m), Sl)
+				}},
+			// UNION ALL whose branches have different bounds, the later one
+			// first and then last: a scanner taking one branch's bound for
+			// both drops the other branch's earlier rows.
+			query{shape: "union-late-first", offset: o.name, kind: kindCountSum, meas: m, prunable: false,
+				sel: fixed(or(and(hostIn(1), ge(l)), and(not(hostIn(1)), ge(s)))),
+				from: func(t, ex func(string) string) string {
+					return fmt.Sprintf("SELECT %s FROM (SELECT * FROM %s WHERE time >= '%s' AND host = 'h1' UNION ALL SELECT * FROM %s WHERE time >= '%s' AND host <> 'h1') u",
+						cs(ex(m)), t(m), Ll, t(m), Sl)
+				}},
+			query{shape: "union-late-last", offset: o.name, kind: kindCountSum, meas: m, prunable: false,
+				sel: fixed(or(and(not(hostIn(1)), ge(s)), and(hostIn(1), ge(l)))),
+				from: func(t, ex func(string) string) string {
+					return fmt.Sprintf("SELECT %s FROM (SELECT * FROM %s WHERE time >= '%s' AND host <> 'h1' UNION ALL SELECT * FROM %s WHERE time >= '%s' AND host = 'h1') u",
+						cs(ex(m)), t(m), Sl, t(m), Ll)
+				}},
+			// A window over a filtered subquery, and an outer filter on the
+			// window's value rather than on time: every inner row counts.
+			query{shape: "window-subquery", offset: o.name, kind: kindCountSum, meas: m, prunable: false, sel: fixed(ge(s)),
+				from: func(t, ex func(string) string) string {
+					return fmt.Sprintf("SELECT %s FROM (SELECT *, row_number() OVER (PARTITION BY host ORDER BY time, seq) rn FROM %s WHERE time >= '%s') w WHERE rn >= 1",
+						cs(ex(m)), t(m), Sl)
+				}},
+		)
 		if m2 != "" {
+			// A JOIN whose joined side carries the later, aliased bound and
+			// contributes one row whatever it holds (an aggregate without
+			// GROUP BY), so the answer is a's rows alone.
+			qs = append(qs, query{shape: "join-alias-late", offset: o.name, kind: kindCountSum, meas: m, prunable: false, sel: fixed(ge(s)),
+				from: func(t, ex func(string) string) string {
+					return fmt.Sprintf("SELECT %s FROM %s a LEFT JOIN (SELECT count(*) n FROM %s b WHERE b.time >= '%s') k ON true WHERE a.time >= '%s'",
+						cs(ex(m)), t(m), t(m2), Ll, Sl)
+				}})
 			S2 := S.Add(-2 * time.Hour) // another hour: a leaked bound drops rows
 			s2 := S2.UnixMicro()
-			qs = append(qs, query{shape: "two-measurements", offset: o.name, kind: kindCountSum, meas: m, meas2: m2, prunable: true,
+			qs = append(qs, query{shape: "two-measurements", offset: o.name, kind: kindCountSum, meas: m, meas2: m2, prunable: false,
 				sel: fixed(ge(s)), // the second measurement's window is s2; see twoSel
 				from: func(t, ex func(string) string) string {
-					inner := "count(*) c, coalesce(sum(seq),0)::BIGINT s, count(*) FILTER (WHERE %[1]s) ec, coalesce(sum(seq) FILTER (WHERE %[1]s),0)::BIGINT es"
+					inner := "count(*) c, coalesce(sum(seq),0)::BIGINT s, coalesce(count_if(%[1]s),0)::BIGINT ec, coalesce(sum(CASE WHEN %[1]s THEN seq ELSE 0 END),0)::BIGINT es"
 					return fmt.Sprintf("SELECT x.c + y.c, x.s + y.s, x.ec + y.ec, x.es + y.es FROM (SELECT %s FROM %s WHERE time >= '%s') x, (SELECT %s FROM %s WHERE time >= '%s') y",
 						fmt.Sprintf(inner, ex(m)), t(m), Sl, fmt.Sprintf(inner, ex(m2)), t(m2), lit(S2))
 				}})
@@ -191,7 +255,7 @@ func buildCorpus(m, m2 string, ref time.Time) []query {
 			{"current-timestamp", fmt.Sprintf("time > CURRENT_TIMESTAMP - INTERVAL '%d seconds'", secs)},
 		} {
 			where := form.where
-			qs = append(qs, query{shape: form.shape, offset: name, kind: kindCountSum, meas: m, prunable: true, relative: true, sel: rel,
+			qs = append(qs, query{shape: form.shape, offset: name, kind: kindCountSum, meas: m, prunable: true, relative: true, span: time.Duration(secs) * time.Second, sel: rel,
 				from: func(t, ex func(string) string) string {
 					return fmt.Sprintf("SELECT %s FROM %s WHERE %s", cs(ex(m)), t(m), where)
 				}})

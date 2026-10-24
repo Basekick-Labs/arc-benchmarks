@@ -10,7 +10,8 @@ import (
 type record struct {
 	q      query
 	wire   wire
-	header bool // bare table with x-arc-database, or db.m without
+	header bool   // bare table with x-arc-database, or db.m without
+	node   string // the reader that answered
 	sql    string
 	res    result
 	send   time.Time
@@ -63,18 +64,35 @@ type judge struct {
 // that is live for Arc, the row is stamped in that hour more than the margin
 // after its flush, and its file was flushed before start - margin. Only
 // future-stamped rows qualify, and they are outside the exact part anyway;
-// this only loosens the whole answer's lower bound.
+// this only loosens the whole answer's lower bound. A relative window's
+// start is Arc's now() - span, somewhere between send and recv: the row may
+// be hidden if the contract holds at either end.
 func (j judge) mayHide(x *row, r record) bool {
-	if j.margin <= 0 || r.q.start.IsZero() || !x.fut {
+	if j.margin <= 0 || !x.fut {
 		return false
 	}
+	if !r.q.start.IsZero() {
+		return j.mayHideAt(x, r.q.start, r.send)
+	}
+	if !r.q.relative || r.q.span <= 0 {
+		return false
+	}
+	// Arc's start, in Arc's clock: its now() was within [send, recv].
+	early := r.send.Add(j.off - j.tol - r.q.span)
+	late := r.recv.Add(j.off + j.tol - r.q.span)
+	return j.mayHideAt(x, early, r.send) || j.mayHideAt(x, late, r.recv)
+}
+
+// mayHideAt is mayHide for a window starting at start (Arc's clock), run
+// when our clock read now.
+func (j judge) mayHideAt(x *row, start, now time.Time) bool {
 	slack := time.Second + j.tol
-	hour := r.q.start.UTC().Truncate(time.Hour)
+	hour := start.UTC().Truncate(time.Hour)
 	ts := time.UnixMicro(x.tsUs).UTC()
 	flush := x.sentAt.Add(j.off)
-	return hour.Equal(r.send.Add(j.off).UTC().Truncate(time.Hour)) &&
+	return hour.Equal(now.Add(j.off).UTC().Truncate(time.Hour)) &&
 		hour.Equal(ts.Truncate(time.Hour)) &&
-		flush.Before(r.q.start.Add(-j.margin).Add(slack)) &&
+		flush.Before(start.Add(-j.margin).Add(slack)) &&
 		ts.Sub(flush) > j.margin-slack
 }
 

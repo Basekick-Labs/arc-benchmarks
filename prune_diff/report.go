@@ -56,12 +56,26 @@ type report struct {
 	Passes        float64            `json:"file_pruning_passes"`
 	Compacted     *float64           `json:"compaction_files_compacted,omitempty"`
 	LiveHourExact int                `json:"exact_judgements_starting_in_live_hour"`
-	MayMiss       int                `json:"judgements_allowed_to_miss_future_stamped_rows"`
-	BracketZero   float64            `json:"bracket_lower_zero_fraction"`
-	SelfTest      []*selfTestResult  `json:"self_test,omitempty"`
-	crossedHour   bool
-	failCount     int
-	errCount      int
+	// Of the prunable live-hour count/sum judgements, how many reached the
+	// file-time pass (Arc's passes metric moved): pruning that never runs
+	// proves nothing.
+	LiveHourPrunable int               `json:"prunable_live_hour_judgements"`
+	LiveHourPassed   int               `json:"prunable_live_hour_judgements_that_reached_the_pass"`
+	MayMiss          int               `json:"judgements_allowed_to_miss_future_stamped_rows"`
+	BracketZero      float64           `json:"bracket_lower_zero_fraction"`
+	SelfTest         []*selfTestResult `json:"self_test,omitempty"`
+	// Latency of answered queries (status 200), by wire, and by wire for
+	// windows starting in the live hour (what file pruning can narrow) and
+	// for queries sent in minutes 0-6 of an hour. For on/off A/B runs.
+	Latency map[string]latencyStat `json:"latency_ms,omitempty"`
+	// ByNode: verdicts per reader (M5 queries a pruning-on and a pruning-off
+	// reader with the same SQL).
+	ByNode      map[string]map[string]int `json:"by_node,omitempty"`
+	Failover    *failoverResult           `json:"failover,omitempty"`
+	Deletes     *deleteReport             `json:"deletes,omitempty"`
+	crossedHour bool
+	failCount   int
+	errCount    int
 }
 
 func buildReport(c config, j judge, rn *runner, g *generator, start time.Time, compacted float64, compKnown bool) *report {
@@ -84,10 +98,20 @@ func buildReport(c config, j judge, rn *runner, g *generator, start time.Time, c
 		rep.Compacted = &compacted
 	}
 	brackets, zero := 0, 0
+	lat := map[string][]time.Duration{}
 	verdicts := settleAll(j, rn.records)
 	for i, r := range rn.records {
 		v := verdicts[i]
 		rep.Totals[string(v.status)]++
+		if r.node != "" {
+			if rep.ByNode == nil {
+				rep.ByNode = map[string]map[string]int{}
+			}
+			if rep.ByNode[r.node] == nil {
+				rep.ByNode[r.node] = map[string]int{}
+			}
+			rep.ByNode[r.node][string(v.status)]++
+		}
 		if v.class != "" {
 			rep.ByClass[v.class+"/"+string(v.status)]++
 		}
@@ -117,12 +141,29 @@ func buildReport(c config, j judge, rn *runner, g *generator, start time.Time, c
 		if v.status == pass && strings.HasSuffix(v.class, "-exact") && v.exp.exactLo.count > 0 &&
 			!r.q.start.IsZero() && !r.q.start.Before(r.send.Truncate(time.Hour)) {
 			rep.LiveHourExact++
+			if r.q.prunable {
+				rep.LiveHourPrunable++
+				if r.passes > 0 {
+					rep.LiveHourPassed++
+				}
+			}
 		}
 		if r.phase == "live" && !r.send.Truncate(time.Hour).Equal(start.Truncate(time.Hour)) {
 			rep.crossedHour = true
 		}
 		if v.mayMiss {
 			rep.MayMiss++
+		}
+		if r.res.status == 200 && r.res.err == nil {
+			w := string(r.wire)
+			d := r.recv.Sub(r.send)
+			lat[w] = append(lat[w], d)
+			if !r.q.start.IsZero() && !r.q.start.Before(r.send.Truncate(time.Hour)) {
+				lat[w+"/live-hour"] = append(lat[w+"/live-hour"], d)
+			}
+			if r.send.Minute() < 7 {
+				lat[w+"/minutes-0-6"] = append(lat[w+"/minutes-0-6"], d)
+			}
 		}
 		if v.status == fail {
 			rep.failCount++
@@ -134,6 +175,7 @@ func buildReport(c config, j judge, rn *runner, g *generator, start time.Time, c
 	if brackets > 0 {
 		rep.BracketZero = float64(zero) / float64(brackets)
 	}
+	rep.Latency = latencyStats(lat)
 	return rep
 }
 
@@ -270,7 +312,30 @@ func brackets(e expectation) string {
 	return fmt.Sprintf("exact [%d,%d]/[%d,%d] total [%d,%d]/[%d,%d]", e.exactLo.count, e.exactHi.count, e.exactLo.sum, e.exactHi.sum, e.totLo.count, e.totHi.count, e.totLo.sum, e.totHi.sum)
 }
 
+type latencyStat struct {
+	N   int     `json:"n"`
+	P50 float64 `json:"p50"`
+	P90 float64 `json:"p90"`
+	P99 float64 `json:"p99"`
+	Max float64 `json:"max"`
+}
+
+func latencyStats(lat map[string][]time.Duration) map[string]latencyStat {
+	out := map[string]latencyStat{}
+	ms := func(d time.Duration) float64 { return float64(d.Microseconds()) / 1000 }
+	for k, ds := range lat {
+		sort.Slice(ds, func(a, b int) bool { return ds[a] < ds[b] })
+		at := func(q float64) float64 { return ms(ds[int(q*float64(len(ds)-1))]) }
+		out[k] = latencyStat{N: len(ds), P50: at(0.50), P90: at(0.90), P99: at(0.99), Max: ms(ds[len(ds)-1])}
+	}
+	return out
+}
+
 func finalVerdict(c config, rep *report) string {
+	if rep.Deletes != nil && rep.Deletes.Fail > 0 {
+		rep.Reasons = append(rep.Reasons, fmt.Sprintf("%d DELETE-concurrent answers outside the totals (empty 200s or errors included)", rep.Deletes.Fail))
+		return "FAIL"
+	}
 	if rep.failCount > 0 || len(rep.RawScanFails) > 0 {
 		rep.Reasons = append(rep.Reasons, fmt.Sprintf("%d wrong answers, %d raw-scan mismatches", rep.failCount, len(rep.RawScanFails)))
 		return "FAIL"
@@ -280,6 +345,22 @@ func finalVerdict(c config, rep *report) string {
 			rep.Reasons = append(rep.Reasons, "self-test "+st.Flavour+": the judge passed answers it should have failed")
 			return "HARNESS-BROKEN"
 		}
+	}
+	if rep.Failover != nil && rep.Failover.Err != "" {
+		rep.Reasons = append(rep.Reasons, "failover: "+rep.Failover.Err)
+		return "ERROR"
+	}
+	if c.failoverAt >= 0 && rep.Failover == nil {
+		rep.Reasons = append(rep.Reasons, "the failover never ran")
+		return "INCONCLUSIVE"
+	}
+	if c.deleteEvery > 0 && (rep.Deletes == nil || rep.Deletes.Deletes == 0) {
+		rep.Reasons = append(rep.Reasons, "no DELETE ran")
+		return "INCONCLUSIVE"
+	}
+	if c.expectFilePruning && rep.LiveHourPrunable > 0 && 2*rep.LiveHourPassed < rep.LiveHourPrunable {
+		rep.Reasons = append(rep.Reasons, fmt.Sprintf("only %d of %d prunable live-hour count/sum judgements reached the file-time pass", rep.LiveHourPassed, rep.LiveHourPrunable))
+		return "INCONCLUSIVE"
 	}
 	if rep.errCount > 0 {
 		rep.Reasons = append(rep.Reasons, fmt.Sprintf("%d errors", rep.errCount))
@@ -322,6 +403,20 @@ func printReport(rep *report) {
 	fmt.Printf("\n== prune_diff %s: %s %v\n", rep.Mode, rep.Verdict, rep.Reasons)
 	fmt.Printf("writes %d (failed %d), rows %d, totals %v\n", rep.Writes, rep.WriteFails, rep.Rows, rep.Totals)
 	fmt.Printf("by class %v\n", rep.ByClass)
+	for _, n := range sortedKeys(rep.ByNode) {
+		fmt.Printf("node %s: %v\n", n, rep.ByNode[n])
+	}
+	if rep.Failover != nil {
+		fmt.Printf("failover at %s, writes paused %s %s\n", rep.Failover.At, rep.Failover.Downtime, rep.Failover.Err)
+	}
+	if rep.Deletes != nil {
+		fmt.Printf("deletes %d, checks %d: pass %d, 503 %d, FAIL %d %v\n", rep.Deletes.Deletes, rep.Deletes.Checks, rep.Deletes.Pass, rep.Deletes.Unavailable, rep.Deletes.Fail, rep.Deletes.Failures)
+	}
+	for _, k := range sortedKeys(rep.Latency) {
+		l := rep.Latency[k]
+		fmt.Printf("latency %-22s n=%-6d p50 %7.1f ms  p90 %7.1f  p99 %7.1f  max %7.1f\n", k, l.N, l.P50, l.P90, l.P99, l.Max)
+	}
+	fmt.Printf("file pruning: prunable live-hour judgements that reached the pass %d/%d\n", rep.LiveHourPassed, rep.LiveHourPrunable)
 	fmt.Printf("file pruning: passes %.0f expansions %.0f; live-hour exact judgements %d; bracket lower=0 %.0f%%; allowed to miss future-stamped rows %d\n", rep.Passes, rep.Expansions, rep.LiveHourExact, rep.BracketZero*100, rep.MayMiss)
 	if rep.Compacted != nil {
 		fmt.Printf("compaction files compacted: %.0f\n", *rep.Compacted)
