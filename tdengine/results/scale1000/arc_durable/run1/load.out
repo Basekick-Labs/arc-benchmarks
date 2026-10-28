@@ -1,103 +1,103 @@
-2026/10/28 08:12:45 Warning: Arc does not support automatic database deletion. Database 'benchmark' must be removed manually if needed.
-2026/10/28 08:12:45 Arc database 'benchmark' will be created automatically on first write
+2026/10/28 12:52:42 Warning: Arc does not support automatic database deletion. Database 'benchmark' must be removed manually if needed.
+2026/10/28 12:52:42 Arc database 'benchmark' will be created automatically on first write
 time,per. metric/s,metric total,overall metric/s,per. row/s,row total,overall row/s
-2026/10/28 08:12:48 
+2026/10/28 12:52:45 
 === PROFILING STATS (1557 batches) ===
-2026/10/28 08:12:48 Columnar conversion: 0s (0.0%)
-2026/10/28 08:12:48 Msgpack encoding:    0s (0.0%)
-2026/10/28 08:12:48 Gzip compression:    0s (0.0%)
-2026/10/28 08:12:48 HTTP request:        34.276369549s (100.0%)
-2026/10/28 08:12:48 Total tracked:       34.276369549s
-2026/10/28 08:12:48 
+2026/10/28 12:52:45 
 === PROFILING STATS (1557 batches) ===
-2026/10/28 08:12:48 Columnar conversion: 0s (0.0%)
-2026/10/28 08:12:48 Msgpack encoding:    0s (0.0%)
-2026/10/28 08:12:48 Gzip compression:    0s (0.0%)
-2026/10/28 08:12:48 HTTP request:        34.276369549s (100.0%)
-2026/10/28 08:12:48 Total tracked:       34.276369549s
-2026/10/28 08:12:48 Avg per batch:       22.014367ms
-2026/10/28 08:12:48 
+2026/10/28 12:52:45 Columnar conversion: 0s (0.0%)
+2026/10/28 12:52:45 Msgpack encoding:    0s (0.0%)
+2026/10/28 12:52:45 Columnar conversion: 0s (0.0%)
+2026/10/28 12:52:45 
 === PROFILING STATS (1557 batches) ===
-2026/10/28 08:12:48 Columnar conversion: 0s (0.0%)
-2026/10/28 08:12:48 Msgpack encoding:    0s (0.0%)
-2026/10/28 08:12:48 Gzip compression:    0s (0.0%)
-2026/10/28 08:12:48 HTTP request:        34.276369549s (100.0%)
-2026/10/28 08:12:48 Total tracked:       34.276369549s
-2026/10/28 08:12:48 Avg per batch:       22.014367ms
-2026/10/28 08:12:48 Avg per batch:       22.014367ms
-2026/10/28 08:12:48 
+2026/10/28 12:52:45 Columnar conversion: 0s (0.0%)
+2026/10/28 12:52:45 Msgpack encoding:    0s (0.0%)
+2026/10/28 12:52:45 Gzip compression:    0s (0.0%)
+2026/10/28 12:52:45 HTTP request:        33.906308154s (100.0%)
+2026/10/28 12:52:45 Total tracked:       33.906308154s
+2026/10/28 12:52:45 Avg per batch:       21.776691ms
+2026/10/28 12:52:45 Msgpack encoding:    0s (0.0%)
+2026/10/28 12:52:45 Gzip compression:    0s (0.0%)
+2026/10/28 12:52:45 HTTP request:        33.906308154s (100.0%)
+2026/10/28 12:52:45 Total tracked:       33.906308154s
+2026/10/28 12:52:45 Avg per batch:       21.776691ms
+2026/10/28 12:52:45 
 === PROFILING STATS (1557 batches) ===
-2026/10/28 08:12:48 Columnar conversion: 0s (0.0%)
-2026/10/28 08:12:48 Msgpack encoding:    0s (0.0%)
-2026/10/28 08:12:48 Gzip compression:    0s (0.0%)
-2026/10/28 08:12:48 HTTP request:        34.276369549s (100.0%)
-2026/10/28 08:12:48 Total tracked:       34.276369549s
-2026/10/28 08:12:48 Avg per batch:       22.014367ms
-2026/10/28 08:12:48 
+2026/10/28 12:52:45 Columnar conversion: 0s (0.0%)
+2026/10/28 12:52:45 Msgpack encoding:    0s (0.0%)
+2026/10/28 12:52:45 Gzip compression:    0s (0.0%)
+2026/10/28 12:52:45 
 === PROFILING STATS (1557 batches) ===
-2026/10/28 08:12:48 Columnar conversion: 0s (0.0%)
-2026/10/28 08:12:48 Msgpack encoding:    0s (0.0%)
-2026/10/28 08:12:48 
+2026/10/28 12:52:45 Columnar conversion: 0s (0.0%)
+2026/10/28 12:52:45 Msgpack encoding:    0s (0.0%)
+2026/10/28 12:52:45 Gzip compression:    0s (0.0%)
+2026/10/28 12:52:45 
 === PROFILING STATS (1557 batches) ===
-2026/10/28 08:12:48 Columnar conversion: 0s (0.0%)
-2026/10/28 08:12:48 Msgpack encoding:    0s (0.0%)
-2026/10/28 08:12:48 
+2026/10/28 12:52:45 Columnar conversion: 0s (0.0%)
+2026/10/28 12:52:45 Msgpack encoding:    0s (0.0%)
+2026/10/28 12:52:45 Gzip compression:    0s (0.0%)
+2026/10/28 12:52:45 HTTP request:        33.906308154s (100.0%)
+2026/10/28 12:52:45 Total tracked:       33.906308154s
+2026/10/28 12:52:45 Avg per batch:       21.776691ms
+2026/10/28 12:52:45 
 === PROFILING STATS (1557 batches) ===
-2026/10/28 08:12:48 Columnar conversion: 0s (0.0%)
-2026/10/28 08:12:48 Msgpack encoding:    0s (0.0%)
-2026/10/28 08:12:48 Gzip compression:    0s (0.0%)
-2026/10/28 08:12:48 HTTP request:        34.276369549s (100.0%)
-2026/10/28 08:12:48 Total tracked:       34.276369549s
-2026/10/28 08:12:48 
+2026/10/28 12:52:45 Columnar conversion: 0s (0.0%)
+2026/10/28 12:52:45 Msgpack encoding:    0s (0.0%)
+2026/10/28 12:52:45 Gzip compression:    0s (0.0%)
+2026/10/28 12:52:45 HTTP request:        33.906308154s (100.0%)
+2026/10/28 12:52:45 Total tracked:       33.906308154s
+2026/10/28 12:52:45 Avg per batch:       21.776691ms
+2026/10/28 12:52:45 
 === PROFILING STATS (1557 batches) ===
-2026/10/28 08:12:48 
+2026/10/28 12:52:45 Columnar conversion: 0s (0.0%)
+2026/10/28 12:52:45 Msgpack encoding:    0s (0.0%)
+2026/10/28 12:52:45 Gzip compression:    0s (0.0%)
+2026/10/28 12:52:45 HTTP request:        33.906308154s (100.0%)
+2026/10/28 12:52:45 
 === PROFILING STATS (1557 batches) ===
-2026/10/28 08:12:48 Columnar conversion: 0s (0.0%)
-2026/10/28 08:12:48 Msgpack encoding:    0s (0.0%)
-2026/10/28 08:12:48 Gzip compression:    0s (0.0%)
-2026/10/28 08:12:48 HTTP request:        34.276369549s (100.0%)
-2026/10/28 08:12:48 Total tracked:       34.276369549s
-2026/10/28 08:12:48 Avg per batch:       22.014367ms
-2026/10/28 08:12:48 
+2026/10/28 12:52:45 Columnar conversion: 0s (0.0%)
+2026/10/28 12:52:45 Msgpack encoding:    0s (0.0%)
+2026/10/28 12:52:45 Gzip compression:    0s (0.0%)
+2026/10/28 12:52:45 HTTP request:        33.906308154s (100.0%)
+2026/10/28 12:52:45 Total tracked:       33.906308154s
+2026/10/28 12:52:45 Avg per batch:       21.776691ms
+2026/10/28 12:52:45 
 === PROFILING STATS (1557 batches) ===
-2026/10/28 08:12:48 Columnar conversion: 0s (0.0%)
-2026/10/28 08:12:48 Msgpack encoding:    0s (0.0%)
-2026/10/28 08:12:48 Gzip compression:    0s (0.0%)
-2026/10/28 08:12:48 
+2026/10/28 12:52:45 Columnar conversion: 0s (0.0%)
+2026/10/28 12:52:45 Msgpack encoding:    0s (0.0%)
+2026/10/28 12:52:45 Gzip compression:    0s (0.0%)
+2026/10/28 12:52:45 HTTP request:        33.906308154s (100.0%)
+2026/10/28 12:52:45 Total tracked:       33.906308154s
+2026/10/28 12:52:45 Avg per batch:       21.776691ms
+2026/10/28 12:52:45 Gzip compression:    0s (0.0%)
+2026/10/28 12:52:45 HTTP request:        33.906308154s (100.0%)
+2026/10/28 12:52:45 Total tracked:       33.906308154s
+2026/10/28 12:52:45 Avg per batch:       21.776691ms
+2026/10/28 12:52:45 
 === PROFILING STATS (1557 batches) ===
-2026/10/28 08:12:48 Columnar conversion: 0s (0.0%)
-2026/10/28 08:12:48 Msgpack encoding:    0s (0.0%)
-2026/10/28 08:12:48 Gzip compression:    0s (0.0%)
-2026/10/28 08:12:48 HTTP request:        34.276369549s (100.0%)
-2026/10/28 08:12:48 
+2026/10/28 12:52:45 Columnar conversion: 0s (0.0%)
+2026/10/28 12:52:45 Msgpack encoding:    0s (0.0%)
+2026/10/28 12:52:45 Gzip compression:    0s (0.0%)
+2026/10/28 12:52:45 HTTP request:        33.906308154s (100.0%)
+2026/10/28 12:52:45 Total tracked:       33.906308154s
+2026/10/28 12:52:45 Avg per batch:       21.776691ms
+2026/10/28 12:52:45 
 === PROFILING STATS (1557 batches) ===
-2026/10/28 08:12:48 Columnar conversion: 0s (0.0%)
-2026/10/28 08:12:48 Gzip compression:    0s (0.0%)
-2026/10/28 08:12:48 HTTP request:        34.276369549s (100.0%)
-2026/10/28 08:12:48 Total tracked:       34.276369549s
-2026/10/28 08:12:48 Gzip compression:    0s (0.0%)
-2026/10/28 08:12:48 HTTP request:        34.276369549s (100.0%)
-2026/10/28 08:12:48 Total tracked:       34.276369549s
-2026/10/28 08:12:48 Avg per batch:       22.014367ms
-2026/10/28 08:12:48 Avg per batch:       22.014367ms
-2026/10/28 08:12:48 Columnar conversion: 0s (0.0%)
-2026/10/28 08:12:48 Msgpack encoding:    0s (0.0%)
-2026/10/28 08:12:48 Gzip compression:    0s (0.0%)
-2026/10/28 08:12:48 HTTP request:        34.276369549s (100.0%)
-2026/10/28 08:12:48 Total tracked:       34.276369549s
-2026/10/28 08:12:48 Total tracked:       34.276369549s
-2026/10/28 08:12:48 Avg per batch:       22.014367ms
-2026/10/28 08:12:48 Msgpack encoding:    0s (0.0%)
-2026/10/28 08:12:48 Gzip compression:    0s (0.0%)
-2026/10/28 08:12:48 HTTP request:        34.276369549s (100.0%)
-2026/10/28 08:12:48 Total tracked:       34.276369549s
-2026/10/28 08:12:48 Avg per batch:       22.014367ms
-2026/10/28 08:12:48 HTTP request:        34.276369549s (100.0%)
-2026/10/28 08:12:48 Total tracked:       34.276369549s
-2026/10/28 08:12:48 Avg per batch:       22.014367ms
-2026/10/28 08:12:48 Avg per batch:       22.014367ms
-2026/10/28 08:12:48 Avg per batch:       22.014367ms
+2026/10/28 12:52:45 Columnar conversion: 0s (0.0%)
+2026/10/28 12:52:45 Msgpack encoding:    0s (0.0%)
+2026/10/28 12:52:45 Gzip compression:    0s (0.0%)
+2026/10/28 12:52:45 HTTP request:        33.906308154s (100.0%)
+2026/10/28 12:52:45 Total tracked:       33.906308154s
+2026/10/28 12:52:45 Avg per batch:       21.776691ms
+2026/10/28 12:52:45 HTTP request:        33.906308154s (100.0%)
+2026/10/28 12:52:45 Total tracked:       33.906308154s
+2026/10/28 12:52:45 Avg per batch:       21.776691ms
+2026/10/28 12:52:45 HTTP request:        33.906308154s (100.0%)
+2026/10/28 12:52:45 Total tracked:       33.906308154s
+2026/10/28 12:52:45 Avg per batch:       21.776691ms
+2026/10/28 12:52:45 Total tracked:       33.906308154s
+2026/10/28 12:52:45 Avg per batch:       21.776691ms
 
 Summary:
-loaded 155700000 metrics in 2.865sec with 12 workers (mean rate 54347305.20 metrics/sec)
-loaded 15570000 rows in 2.865sec with 12 workers (mean rate 5434730.52 rows/sec)
+loaded 155700000 metrics in 2.833sec with 12 workers (mean rate 54955996.89 metrics/sec)
+loaded 15570000 rows in 2.833sec with 12 workers (mean rate 5495599.69 rows/sec)

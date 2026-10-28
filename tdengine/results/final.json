@@ -12,16 +12,16 @@
     "td_rest_ms": 3.14,
     "td_native_ms": 4.01,
     "td_best_ms": 3.14,
-    "arc_ms": 21.03,
-    "arc_sorted_ms": 18.71
+    "arc_ms": 21.25,
+    "arc_sorted_ms": 19.92
    },
    {
     "type": "avg-vs-projected-fuel-consumption",
     "td_rest_ms": 37.24,
     "td_native_ms": 36.99,
     "td_best_ms": 36.99,
-    "arc_ms": 10.92,
-    "arc_sorted_ms": 10.26
+    "arc_ms": 10.91,
+    "arc_sorted_ms": 11.36
    },
    {
     "type": "daily-activity",
@@ -29,39 +29,39 @@
     "td_native_ms": null,
     "td_best_ms": 31.14,
     "arc_ms": 28.93,
-    "arc_sorted_ms": 26.06
+    "arc_sorted_ms": 25.61
    },
    {
     "type": "high-load",
     "td_rest_ms": 4.54,
     "td_native_ms": 4.91,
     "td_best_ms": 4.54,
-    "arc_ms": 23.26,
-    "arc_sorted_ms": 15.11
+    "arc_ms": 23.51,
+    "arc_sorted_ms": 15.94
    },
    {
     "type": "last-loc",
     "td_rest_ms": 7.01,
     "td_native_ms": 8.19,
     "td_best_ms": 7.01,
-    "arc_ms": 18.55,
-    "arc_sorted_ms": 17.85
+    "arc_ms": 18.89,
+    "arc_sorted_ms": 15.55
    },
    {
     "type": "long-daily-sessions",
     "td_rest_ms": 20.25,
     "td_native_ms": 21.15,
     "td_best_ms": 20.25,
-    "arc_ms": 20.94,
-    "arc_sorted_ms": 13.89
+    "arc_ms": 21.55,
+    "arc_sorted_ms": 14.68
    },
    {
     "type": "long-driving-sessions",
     "td_rest_ms": 7.35,
     "td_native_ms": 8.06,
     "td_best_ms": 7.35,
-    "arc_ms": 9.05,
-    "arc_sorted_ms": 9.11
+    "arc_ms": 9.13,
+    "arc_sorted_ms": 7.94
    },
    {
     "type": "low-fuel",
@@ -69,15 +69,15 @@
     "td_native_ms": 7.26,
     "td_best_ms": 5.26,
     "arc_ms": 9.8,
-    "arc_sorted_ms": 9.27
+    "arc_sorted_ms": 8.37
    },
    {
     "type": "stationary-trucks",
     "td_rest_ms": 4.53,
     "td_native_ms": 5.14,
     "td_best_ms": 4.53,
-    "arc_ms": 5.54,
-    "arc_sorted_ms": 8.37
+    "arc_ms": 5.51,
+    "arc_sorted_ms": 5.32
    }
   ],
   "loads": {
@@ -85,69 +85,69 @@
     "runs": 3,
     "rows": 15560504,
     "ack_s": [
-     1.54,
-     1.53,
-     1.51
+     1.49,
+     1.62,
+     1.57
     ],
-    "ack_med_s": 1.53,
+    "ack_med_s": 1.57,
     "queryable_s": [
-     4.74,
-     4.68,
-     4.67
+     4.63,
+     4.77,
+     4.73
     ],
-    "queryable_med_s": 4.68,
-    "storage_mb_med": 161.7
+    "queryable_med_s": 4.73,
+    "storage_mb_med": 161.6
    },
    "arc_durable": {
     "runs": 3,
     "rows": 15560504,
     "ack_s": [
-     2.91,
-     2.81,
-     2.82
+     2.88,
+     2.75,
+     2.92
     ],
-    "ack_med_s": 2.82,
+    "ack_med_s": 2.88,
     "queryable_s": [
-     6.11,
-     5.98,
-     5.98
+     6.04,
+     5.94,
+     6.08
     ],
-    "queryable_med_s": 5.98,
-    "storage_mb_med": 161.6
+    "queryable_med_s": 6.04,
+    "storage_mb_med": 161.7
    },
    "arc_sorted": {
     "runs": 3,
     "rows": 15560504,
     "ack_s": [
      1.46,
-     1.47,
-     1.48
+     1.51,
+     1.54
     ],
-    "ack_med_s": 1.47,
+    "ack_med_s": 1.51,
     "queryable_s": [
-     7.66,
-     5.65,
-     5.68
+     4.62,
+     4.66,
+     4.74
     ],
-    "queryable_med_s": 5.68,
-    "storage_mb_med": 137.7
+    "queryable_med_s": 4.66,
+    "storage_mb_med": 125.7
    },
    "arc_sorted_durable": {
     "runs": 3,
     "rows": 15560504,
     "ack_s": [
-     3.18,
-     3.29,
-     3.23
+     2.77,
+     2.79,
+     2.73
     ],
-    "ack_med_s": 3.23,
+    "ack_med_s": 2.77,
     "queryable_s": [
-     8.38,
-     8.5,
-     8.45
+     4.88,
+     4.91,
+     5.89
     ],
-    "queryable_med_s": 8.45,
-    "storage_mb_med": 137.7
+    "queryable_med_s": 4.91,
+    "storage_mb_med": 125.7
    },
    "tdengine": {
     "runs": 3,
@@ -175,146 +175,142 @@
     "td_rest_ms": 36.85,
     "td_native_ms": 36.83,
     "td_best_ms": 36.83,
-    "arc_ms": 188.52,
-    "arc_sorted_ms": 144.03
+    "arc_ms": 185.18,
+    "arc_sorted_ms": 147.36
    },
    {
     "type": "avg-vs-projected-fuel-consumption",
     "td_rest_ms": 547.68,
     "td_native_ms": 544.7,
     "td_best_ms": 544.7,
-    "arc_ms": 82.98,
-    "arc_sorted_ms": 78.68
+    "arc_ms": 83.32,
+    "arc_sorted_ms": 87.15
    },
    {
     "type": "daily-activity",
     "td_rest_ms": 819.59,
     "td_native_ms": null,
     "td_best_ms": 819.59,
-    "arc_ms": 308.43,
-    "arc_sorted_ms": 206.37
+    "arc_ms": 306.42,
+    "arc_sorted_ms": 195.68
    },
    {
     "type": "high-load",
     "td_rest_ms": 10.87,
     "td_native_ms": 10.86,
     "td_best_ms": 10.86,
-    "arc_ms": 175.66,
-    "arc_sorted_ms": 78.52
+    "arc_ms": 176.49,
+    "arc_sorted_ms": 75.44
    },
    {
     "type": "last-loc",
     "td_rest_ms": 13.92,
     "td_native_ms": 14.12,
     "td_best_ms": 13.92,
-    "arc_ms": 121.6,
-    "arc_sorted_ms": 55.98
+    "arc_ms": 120.73,
+    "arc_sorted_ms": 45.37
    },
    {
     "type": "long-daily-sessions",
     "td_rest_ms": 259.65,
     "td_native_ms": 259.55,
     "td_best_ms": 259.55,
-    "arc_ms": 159.48,
-    "arc_sorted_ms": 64.52
+    "arc_ms": 159.79,
+    "arc_sorted_ms": 63.52
    },
    {
     "type": "long-driving-sessions",
     "td_rest_ms": 78.11,
     "td_native_ms": 64.5,
     "td_best_ms": 64.5,
-    "arc_ms": 35.82,
-    "arc_sorted_ms": 33.35
+    "arc_ms": 35.2,
+    "arc_sorted_ms": 19.5
    },
    {
     "type": "low-fuel",
     "td_rest_ms": 15.22,
     "td_native_ms": 16.88,
     "td_best_ms": 15.22,
-    "arc_ms": 53.35,
-    "arc_sorted_ms": 45.1
+    "arc_ms": 53.43,
+    "arc_sorted_ms": 27.05
    },
    {
     "type": "stationary-trucks",
     "td_rest_ms": 49.81,
     "td_native_ms": 19.84,
     "td_best_ms": 19.84,
-    "arc_ms": 14.48,
-    "arc_sorted_ms": 36.53
+    "arc_ms": 13.85,
+    "arc_sorted_ms": 13.26
    }
   ],
   "loads": {
    "arc": {
-    "runs": 5,
+    "runs": 3,
     "rows": 155585437,
     "ack_s": [
-     50.69,
-     22.34,
-     17.91,
-     45.08,
-     22.29
+     45.56,
+     38.28,
+     21.76
     ],
-    "ack_med_s": 22.34,
+    "ack_med_s": 38.28,
     "queryable_s": [
-     61.5,
-     27.71,
-     21.3,
-     52.63,
-     27.61
+     53.09,
+     47.47,
+     26.05
     ],
-    "queryable_med_s": 27.71,
-    "storage_mb_med": 1778.7
+    "queryable_med_s": 47.47,
+    "storage_mb_med": 1779.9
    },
    "arc_durable": {
     "runs": 3,
     "rows": 155585437,
     "ack_s": [
-     26.58,
-     26.12,
-     25.64
+     26.04,
+     25.85,
+     25.84
     ],
-    "ack_med_s": 26.12,
+    "ack_med_s": 25.85,
     "queryable_s": [
-     30.8,
-     29.31,
-     28.83
+     29.22,
+     29.05,
+     29.02
     ],
-    "queryable_med_s": 29.31,
+    "queryable_med_s": 29.05,
     "storage_mb_med": 1795.5
    },
    "arc_sorted": {
     "runs": 3,
     "rows": 155585437,
     "ack_s": [
-     49.0,
-     51.94,
-     47.44
+     34.48,
+     22.67,
+     22.03
     ],
-    "ack_med_s": 49.0,
+    "ack_med_s": 22.67,
     "queryable_s": [
-     61.82,
-     63.77,
-     59.31
+     40.93,
+     26.96,
+     26.41
     ],
-    "queryable_med_s": 61.82,
-    "storage_mb_med": 1338.3
+    "queryable_med_s": 26.96,
+    "storage_mb_med": 1271.3
    },
    "arc_sorted_durable": {
     "runs": 3,
     "rows": 155585437,
     "ack_s": [
-     49.0,
-     29.67,
-     36.64
+     24.91,
+     24.27,
+     24.4
     ],
-    "ack_med_s": 36.64,
+    "ack_med_s": 24.4,
     "queryable_s": [
-     58.7,
-     34.97,
-     44.16
+     27.08,
+     27.48,
+     27.6
     ],
-    "queryable_med_s": 44.16,
-    "storage_mb_med": 1332.6
+    "queryable_med_s": 27.48,
+    "storage_mb_med": 1287.8
    },
    "tdengine": {
     "runs": 3,

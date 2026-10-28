@@ -1,14 +1,17 @@
 # Results
 
-Measured 2026-10-27/28 on an Apple M3 Max (14 cores, 36 GB), macOS, both
-engines native.
+Measured on an Apple M3 Max (14 cores, 36 GB), macOS, both engines native.
+TDengine on 2026-10-27/28, Arc on 2026-10-28.
 
-- **Arc:** `Basekick-Labs/arc` main at `20fe85f6` (includes #1407 and #1408).
-  `scaleN/arc`: as shipped, default `wal.ack_mode = "queued"` (5 runs at
-  10,000 trucks, 3 at 1,000). `scaleN/arc_durable`: `wal.ack_mode =
-  "durable"` (3 runs). `scaleN/arc_sorted` and `scaleN/arc_sorted_durable`:
-  the same two modes with `ingest.sort_keys = ["readings:fleet,name",
-  "diagnostics:fleet,name"]` (3 runs each).
+- **Arc:** `Basekick-Labs/arc` main at `0080aa31` (includes #1407, #1408 and
+  the sort-key changes #1409, #1410, #1411), all four variants from
+  `run_arc_0080.sh`, 3 runs each. `scaleN/arc`: as shipped, default
+  `wal.ack_mode = "queued"`. `scaleN/arc_durable`: `wal.ack_mode = "durable"`.
+  `scaleN/arc_sorted` and `scaleN/arc_sorted_durable`: the same two modes with
+  `ingest.sort_keys = ["readings:fleet,name", "diagnostics:fleet,name"]`.
+- **Earlier Arc runs** on main at `20fe85f6` (before #1409-#1411) are kept in
+  `archive/20fe85f6/` with their own `final.json` and `summary.txt`; the
+  scripts that produced them are in `../archive_scripts/`.
 - **TDengine:** TSDB-OSS 3.4.3.3 (`scaleN/tdengine`, 3 runs; `native/` holds
   the native TSBS runner output, whose `daily-activity` result is excluded
   because that client ran in the local timezone, not UTC).

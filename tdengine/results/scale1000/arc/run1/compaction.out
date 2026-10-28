@@ -1,4 +1,4 @@
 Compaction cycle requested (expected cycle id 1) for tiers [hourly, daily] on database iot
-Cycle 1 finished: 2 jobs completed, 0 failed, 266.1 MiB saved in total
+Cycle 1 finished: 2 jobs completed, 0 failed, 266.2 MiB saved in total
 Compaction cycle requested (expected cycle id 2) for tiers [daily] on database iot
-Cycle 2 finished: 2 jobs completed, 0 failed, 266.1 MiB saved in total
+Cycle 2 finished: 2 jobs completed, 0 failed, 266.2 MiB saved in total
