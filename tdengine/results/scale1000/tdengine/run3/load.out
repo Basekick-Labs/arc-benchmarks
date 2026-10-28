@@ -1,0 +1,5 @@
+time,per. metric/s,metric total,overall metric/s,per. row/s,row total,overall row/s
+
+Summary:
+loaded 77806812 metrics in 0.926sec with 12 workers (mean rate 83998782.23 metrics/sec)
+loaded 15560504 rows in 0.926sec with 12 workers (mean rate 16798829.73 rows/sec)

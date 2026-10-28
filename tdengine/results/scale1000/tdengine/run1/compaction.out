@@ -1,0 +1,18 @@
+Welcome to the TDengine TSDB Command Line Interface, Native Client Version:3.4.3.3.community 
+Copyright (c) 2025 by TDengine TSDB, all rights reserved.
+
+taos> flush database iot;
+Query OK, 0 row(s) affected (0.003040s)
+
+Welcome to the TDengine TSDB Command Line Interface, Native Client Version:3.4.3.3.community 
+Copyright (c) 2025 by TDengine TSDB, all rights reserved.
+
+taos> compact database iot;
+
+DB error: Operation not supported in community edition: COMPACT DATABASE [0x8000010D] (0.000426s)
+Welcome to the TDengine TSDB Command Line Interface, Native Client Version:3.4.3.3.community 
+Copyright (c) 2025 by TDengine TSDB, all rights reserved.
+
+taos> show compacts;
+Query OK, 0 row(s) in set (0.001336s)
+

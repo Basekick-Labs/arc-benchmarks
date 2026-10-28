@@ -1,0 +1,9 @@
+Run complete after 20 queries with 1 workers (Overall query rate 41.59 queries/sec):
+TDengine stationary trucks:
+min:    18.77ms, med:    19.84ms, mean:    20.64ms, max:   28.11ms, stddev:     2.19ms, sum:   0.4sec, count: 20
+min:    18.77ms, med:    19.84ms, mean:    20.64ms, max:   28.11ms, stddev:     2.19ms, sum:   0.4sec, count: 20
+all queries               :
+min:    18.77ms, med:    19.84ms, mean:    20.64ms, max:   28.11ms, stddev:     2.19ms, sum:   0.4sec, count: 20
+min:    18.77ms, med:    19.84ms, mean:    20.64ms, max:   28.11ms, stddev:     2.19ms, sum:   0.4sec, count: 20
+wall clock time: 0.484897sec
+Saving results json file to /Users/nacho/dev/basekick-blogs-labs/arc-vs-tdengine/results/scale10000/tdengine/run2/native/stationary-trucks.json

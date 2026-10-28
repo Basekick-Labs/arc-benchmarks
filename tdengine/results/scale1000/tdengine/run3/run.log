@@ -1,0 +1,6 @@
+[01:45:56] tdengine load start (attempt 1)
+[01:46:03] tdengine load done: client 6.991s, rows=15560504, attempts=1
+[01:46:05] tdengine storage tsdb 203700 KB, wal 909592 KB, vnode total 1116368 KB
+[01:47:18] tdengine queries over REST (restarted, first instance per type is cold)
+[01:47:20] tdengine queries, native TSBS runner (warm)
+[01:47:27] done

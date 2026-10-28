@@ -1,0 +1,9 @@
+Run complete after 20 queries with 1 workers (Overall query rate 25.12 queries/sec):
+TDengine average vs projected fuel consumption per fleet:
+min:    33.72ms, med:    36.91ms, mean:    36.69ms, max:   41.20ms, stddev:     1.79ms, sum:   0.7sec, count: 20
+min:    33.72ms, med:    36.91ms, mean:    36.69ms, max:   41.20ms, stddev:     1.79ms, sum:   0.7sec, count: 20
+all queries                                             :
+min:    33.72ms, med:    36.91ms, mean:    36.69ms, max:   41.20ms, stddev:     1.79ms, sum:   0.7sec, count: 20
+min:    33.72ms, med:    36.91ms, mean:    36.69ms, max:   41.20ms, stddev:     1.79ms, sum:   0.7sec, count: 20
+wall clock time: 0.801640sec
+Saving results json file to /Users/nacho/dev/basekick-blogs-labs/arc-vs-tdengine/results/scale1000/tdengine/run1/native/avg-vs-projected-fuel-consumption.json

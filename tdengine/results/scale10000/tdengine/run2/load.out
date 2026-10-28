@@ -1,0 +1,6 @@
+time,per. metric/s,metric total,overall metric/s,per. row/s,row total,overall row/s
+1793151576,47368755.68,4.737058E+08,47368755.68,9473635.78,9.474000E+07,9473635.78
+
+Summary:
+loaded 777937899 metrics in 18.904sec with 12 workers (mean rate 41152274.14 metrics/sec)
+loaded 155585437 rows in 18.904sec with 12 workers (mean rate 8230341.48 rows/sec)

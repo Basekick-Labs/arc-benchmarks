@@ -1,0 +1,9 @@
+Run complete after 20 queries with 1 workers (Overall query rate 57.85 queries/sec):
+TDengine last location per truck:
+min:    13.39ms, med:    13.82ms, mean:    14.06ms, max:   15.84ms, stddev:     0.67ms, sum:   0.3sec, count: 20
+min:    13.39ms, med:    13.82ms, mean:    14.06ms, max:   15.84ms, stddev:     0.67ms, sum:   0.3sec, count: 20
+all queries                     :
+min:    13.39ms, med:    13.82ms, mean:    14.06ms, max:   15.84ms, stddev:     0.67ms, sum:   0.3sec, count: 20
+min:    13.39ms, med:    13.82ms, mean:    14.06ms, max:   15.84ms, stddev:     0.67ms, sum:   0.3sec, count: 20
+wall clock time: 0.348775sec
+Saving results json file to /Users/nacho/dev/basekick-blogs-labs/arc-vs-tdengine/results/scale10000/tdengine/run2/native/last-loc.json

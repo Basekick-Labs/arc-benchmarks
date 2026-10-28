@@ -1,0 +1,9 @@
+Run complete after 20 queries with 1 workers (Overall query rate 67.84 queries/sec):
+TDengine trucks with high load:
+min:    10.70ms, med:    11.31ms, mean:    11.45ms, max:   12.67ms, stddev:     0.53ms, sum:   0.2sec, count: 20
+min:    10.70ms, med:    11.31ms, mean:    11.45ms, max:   12.67ms, stddev:     0.53ms, sum:   0.2sec, count: 20
+all queries                   :
+min:    10.70ms, med:    11.31ms, mean:    11.45ms, max:   12.67ms, stddev:     0.53ms, sum:   0.2sec, count: 20
+min:    10.70ms, med:    11.31ms, mean:    11.45ms, max:   12.67ms, stddev:     0.53ms, sum:   0.2sec, count: 20
+wall clock time: 0.296958sec
+Saving results json file to /Users/nacho/dev/basekick-blogs-labs/arc-vs-tdengine/results/scale10000/tdengine/run1/native/high-load.json
