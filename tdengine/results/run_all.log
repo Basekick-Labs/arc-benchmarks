@@ -1,0 +1,191 @@
+[01:25:30] idle=90.73%
+[01:25:53] idle=97.81%
+[01:26:15] idle=89.47%
+[01:26:15] starting (consecutive idle samples=3)
+[01:27:24] tdengine load start (attempt 1)
+[01:27:31] tdengine load done: client 6.922s, rows=15560504, attempts=1
+[01:27:32] tdengine storage tsdb 203932 KB, wal 878136 KB, vnode total 1085144 KB
+[01:28:44] tdengine queries over REST (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                    21.7     19       7.0       7.4      0
+low-fuel                                     5.4     19       5.2       5.6      0
+high-load                                    4.8     19       4.5       4.9      0
+stationary-trucks                            4.8     19       4.8       5.1      0
+long-driving-sessions                        7.4     19       7.7       8.3      0
+long-daily-sessions                         20.2     19      20.2      21.4      0
+avg-vs-projected-fuel-consumption           36.4     19      37.2      38.1      0
+avg-load                                     3.9     19       3.2       3.4      0
+daily-activity                              32.3     19      31.3      33.6      0
+[01:28:47] tdengine queries, native TSBS runner (warm)
+[01:28:54] done
+[01:28:55] arc load start
+[01:29:01] arc load done: client 1.491s, until queryable 5.666s, rows=15560504
+[01:29:05] arc storage 157868 KB (before compaction 430448 KB), files 2
+[01:29:07] arc queries (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                    87.0     19      18.6      19.4      0
+low-fuel                                    11.4     19       9.7      10.1      0
+high-load                                   23.2     19      23.5      24.6      0
+stationary-trucks                            6.7     19       5.5       6.1      0
+long-driving-sessions                        8.9     19       8.9       9.2      0
+long-daily-sessions                         22.3     19      21.2      22.9      0
+avg-vs-projected-fuel-consumption           11.5     19      11.0      11.3      0
+avg-load                                    21.4     19      21.1      21.4      0
+daily-activity                              28.9     19      29.0      29.6      0
+[01:29:11] done
+[01:30:19] tdengine load start (attempt 1)
+[01:30:45] tdengine load done: client 26.096s, rows=155585437, attempts=1
+[01:30:47] tdengine storage tsdb 2323144 KB, wal 9406148 KB, vnode total 11739920 KB
+[01:31:58] tdengine queries over REST (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                    38.2     19      14.7      16.5      0
+low-fuel                                    21.0     19      14.8      16.6      0
+high-load                                   11.3     19      11.2      11.9      0
+stationary-trucks                           19.1     19      49.8      77.3      0
+long-driving-sessions                      101.1     19      78.1     122.3      0
+long-daily-sessions                        269.0     19     258.8     266.8      0
+avg-vs-projected-fuel-consumption          555.2     19     541.6     554.6      0
+avg-load                                    36.2     19      37.9      46.5      0
+daily-activity                             842.5     19     810.9     820.3      0
+[01:32:34] tdengine queries, native TSBS runner (warm)
+[01:33:21] done
+[01:33:23] arc load start
+[01:34:25] arc load done: client 53.145s, until queryable 62.778s, rows=155585437
+[01:34:48] arc storage 1738152 KB (before compaction 4468376 KB), files 4
+[01:34:50] arc queries (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                   229.7     19     122.4     124.2      0
+low-fuel                                    68.3     19      53.3      54.4      0
+high-load                                  190.6     19     178.6     185.8      0
+stationary-trucks                           19.9     19      14.5      15.5      0
+long-driving-sessions                       33.9     19      36.2      38.6      0
+long-daily-sessions                        166.5     19     165.9     168.9      0
+avg-vs-projected-fuel-consumption           94.1     19      88.1      91.0      0
+avg-load                                   219.5     19     211.3     214.6      0
+daily-activity                             357.8     19     347.4     355.2      0
+[01:35:15] done
+[01:36:24] tdengine load start (attempt 1)
+[01:36:31] tdengine load done: client 6.374s, rows=15560504, attempts=1
+[01:36:32] tdengine storage tsdb 204920 KB, wal 880816 KB, vnode total 1088812 KB
+[01:37:45] tdengine queries over REST (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                    23.2     19       6.9       7.5      0
+low-fuel                                     6.3     19       5.2       5.8      0
+high-load                                    4.6     19       4.5       4.8      0
+stationary-trucks                            6.5     19       4.4       4.8      0
+long-driving-sessions                        7.2     19       7.2       8.2      0
+long-daily-sessions                         22.0     19      20.0      22.2      0
+avg-vs-projected-fuel-consumption           37.6     19      37.3      39.4      0
+avg-load                                     4.7     19       3.1       3.4      0
+daily-activity                              33.7     19      31.1      33.9      0
+[01:37:47] tdengine queries, native TSBS runner (warm)
+[01:37:55] done
+[01:37:56] arc load start
+[01:38:01] arc load done: client 1.535s, until queryable 4.69s, rows=15560504
+[01:38:05] arc storage 157864 KB (before compaction 430528 KB), files 2
+[01:38:07] arc queries (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                    88.0     19      18.8      19.8      0
+low-fuel                                    11.4     19      10.0      10.6      0
+high-load                                   24.7     19      23.9      24.7      0
+stationary-trucks                            6.3     19       5.5       5.8      0
+long-driving-sessions                        8.4     19       9.2       9.4      0
+long-daily-sessions                         21.7     19      21.3      22.3      0
+avg-vs-projected-fuel-consumption           11.7     19      11.0      11.4      0
+avg-load                                    21.6     19      21.2      21.3      0
+daily-activity                              30.3     19      29.3      29.9      0
+[01:38:10] done
+[01:39:19] tdengine load start (attempt 1)
+[01:39:45] tdengine load done: client 25.481s, rows=155585437, attempts=1
+[01:39:47] tdengine storage tsdb 2322348 KB, wal 9399900 KB, vnode total 11732876 KB
+[01:41:00] tdengine queries over REST (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                    34.8     19      13.6      14.4      0
+low-fuel                                    20.7     19      15.4      17.0      0
+high-load                                   11.6     19      10.8      11.5      0
+stationary-trucks                           19.7     19      50.0      68.2      0
+long-driving-sessions                      103.0     19      77.2     123.8      0
+long-daily-sessions                        267.7     19     259.0     268.1      0
+avg-vs-projected-fuel-consumption          552.8     19     545.4     551.7      0
+avg-load                                    40.8     19      38.0      43.0      0
+daily-activity                             856.5     19     826.6     841.0      0
+[01:41:37] tdengine queries, native TSBS runner (warm)
+[01:42:24] done
+[01:42:25] arc load start
+[01:43:55] arc load done: client 75.996s, until queryable 89.884s, rows=155585437
+[01:44:18] arc storage 1753352 KB (before compaction 4468348 KB), files 4
+[01:44:20] arc queries (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                   212.2     19     122.5     126.1      0
+low-fuel                                    69.7     19      53.2      53.8      0
+high-load                                  202.1     19     186.7     191.5      0
+stationary-trucks                           19.3     19      14.2      14.9      0
+long-driving-sessions                       35.9     19      35.6      36.8      0
+long-daily-sessions                        175.0     19     174.4     184.8      0
+avg-vs-projected-fuel-consumption          101.3     19      98.1     102.9      0
+avg-load                                   233.1     19     225.8     229.1      0
+daily-activity                             374.4     19     367.0     374.5      0
+[01:44:46] done
+[01:45:56] tdengine load start (attempt 1)
+[01:46:03] tdengine load done: client 6.991s, rows=15560504, attempts=1
+[01:46:05] tdengine storage tsdb 203700 KB, wal 909592 KB, vnode total 1116368 KB
+[01:47:18] tdengine queries over REST (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                    22.3     19       7.0       7.5      0
+low-fuel                                     5.4     19       5.5       5.9      0
+high-load                                    4.9     19       4.6       5.0      0
+stationary-trucks                            6.1     19       4.3       4.8      0
+long-driving-sessions                        6.7     19       7.2       8.2      0
+long-daily-sessions                         21.4     19      20.7      22.0      0
+avg-vs-projected-fuel-consumption           37.4     19      35.9      40.4      0
+avg-load                                     4.9     19       3.1       3.3      0
+daily-activity                              31.9     19      31.1      33.5      0
+[01:47:20] tdengine queries, native TSBS runner (warm)
+[01:47:27] done
+[01:47:29] arc load start
+[01:47:35] arc load done: client 1.557s, until queryable 5.764s, rows=15560504
+[01:47:39] arc storage 157860 KB (before compaction 430428 KB), files 2
+[01:47:40] arc queries (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                    86.7     19      19.0      19.8      0
+low-fuel                                    11.3     19       9.9      14.6      0
+high-load                                   24.5     19      23.5      24.0      0
+stationary-trucks                            6.2     19       5.4       6.0      0
+long-driving-sessions                        8.1     19       9.2       9.7      0
+long-daily-sessions                         20.3     19      21.8      23.1      0
+avg-vs-projected-fuel-consumption           12.1     19      11.5      11.9      0
+avg-load                                    21.4     19      21.2      21.5      0
+daily-activity                              29.3     19      29.3      30.0      0
+[01:47:43] done
+[01:48:53] tdengine load start (attempt 1)
+[01:49:19] tdengine load done: client 26.228s, rows=155585437, attempts=1
+[01:49:21] tdengine storage tsdb 2322776 KB, wal 9404096 KB, vnode total 11737500 KB
+[01:50:34] tdengine queries over REST (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                    36.0     19      13.5      14.9      0
+low-fuel                                    21.0     19      16.3      17.2      0
+high-load                                   10.9     19      10.7      11.6      0
+stationary-trucks                           19.1     19      48.8      72.0      0
+long-driving-sessions                       99.0     19      79.8     125.9      0
+long-daily-sessions                        270.0     19     263.4     274.3      0
+avg-vs-projected-fuel-consumption          581.5     19     560.5     564.8      0
+avg-load                                    36.4     19      36.4      41.3      0
+daily-activity                             832.4     19     817.1     836.1      0
+[01:51:11] tdengine queries, native TSBS runner (warm)
+[01:52:00] done
+[01:52:01] arc load start
+[01:52:49] arc load done: client 39.649s, until queryable 47.403s, rows=155585437
+[01:53:11] arc storage 1737828 KB (before compaction 4468436 KB), files 4
+[01:53:13] arc queries (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                   214.9     19     122.3     125.3      0
+low-fuel                                    68.4     19      53.5      54.9      0
+high-load                                  188.2     19     176.6     179.6      0
+stationary-trucks                           20.7     19      14.2      15.2      0
+long-driving-sessions                       34.7     19      36.2      37.2      0
+long-daily-sessions                        162.9     19     160.6     163.8      0
+avg-vs-projected-fuel-consumption           90.0     19      84.6      85.3      0
+avg-load                                   200.8     19     203.0     204.3      0
+daily-activity                             349.3     19     335.9     416.1      0
+[01:53:37] done
+ALL_DONE

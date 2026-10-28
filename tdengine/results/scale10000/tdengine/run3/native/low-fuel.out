@@ -1,0 +1,9 @@
+Run complete after 20 queries with 1 workers (Overall query rate 49.03 queries/sec):
+TDengine trucks with low fuel:
+min:    15.26ms, med:    17.18ms, mean:    17.15ms, max:   18.56ms, stddev:     0.97ms, sum:   0.3sec, count: 20
+min:    15.26ms, med:    17.18ms, mean:    17.15ms, max:   18.56ms, stddev:     0.97ms, sum:   0.3sec, count: 20
+all queries                  :
+min:    15.26ms, med:    17.18ms, mean:    17.15ms, max:   18.56ms, stddev:     0.97ms, sum:   0.3sec, count: 20
+min:    15.26ms, med:    17.18ms, mean:    17.15ms, max:   18.56ms, stddev:     0.97ms, sum:   0.3sec, count: 20
+wall clock time: 0.410889sec
+Saving results json file to /Users/nacho/dev/basekick-blogs-labs/arc-vs-tdengine/results/scale10000/tdengine/run3/native/low-fuel.json

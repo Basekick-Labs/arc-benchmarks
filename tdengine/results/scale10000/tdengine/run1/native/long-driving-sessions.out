@@ -1,0 +1,9 @@
+Run complete after 20 queries with 1 workers (Overall query rate 14.77 queries/sec):
+TDengine trucks with longer driving sessions:
+min:    59.08ms, med:    64.50ms, mean:    64.48ms, max:   67.93ms, stddev:     2.17ms, sum:   1.3sec, count: 20
+min:    59.08ms, med:    64.50ms, mean:    64.48ms, max:   67.93ms, stddev:     2.17ms, sum:   1.3sec, count: 20
+all queries                                 :
+min:    59.08ms, med:    64.50ms, mean:    64.48ms, max:   67.93ms, stddev:     2.17ms, sum:   1.3sec, count: 20
+min:    59.08ms, med:    64.50ms, mean:    64.48ms, max:   67.93ms, stddev:     2.17ms, sum:   1.3sec, count: 20
+wall clock time: 1.361350sec
+Saving results json file to /Users/nacho/dev/basekick-blogs-labs/arc-vs-tdengine/results/scale10000/tdengine/run1/native/long-driving-sessions.json

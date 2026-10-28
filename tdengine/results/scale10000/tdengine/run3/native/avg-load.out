@@ -1,0 +1,9 @@
+Run complete after 20 queries with 1 workers (Overall query rate 23.44 queries/sec):
+TDengine average load per truck model per fleet:
+min:    32.96ms, med:    36.83ms, mean:    39.07ms, max:   51.76ms, stddev:     5.41ms, sum:   0.8sec, count: 20
+min:    32.96ms, med:    36.83ms, mean:    39.07ms, max:   51.76ms, stddev:     5.41ms, sum:   0.8sec, count: 20
+all queries                                    :
+min:    32.96ms, med:    36.83ms, mean:    39.07ms, max:   51.76ms, stddev:     5.41ms, sum:   0.8sec, count: 20
+min:    32.96ms, med:    36.83ms, mean:    39.07ms, max:   51.76ms, stddev:     5.41ms, sum:   0.8sec, count: 20
+wall clock time: 0.859386sec
+Saving results json file to /Users/nacho/dev/basekick-blogs-labs/arc-vs-tdengine/results/scale10000/tdengine/run3/native/avg-load.json

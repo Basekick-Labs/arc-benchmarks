@@ -1,0 +1,9 @@
+Run complete after 20 queries with 1 workers (Overall query rate 14.17 queries/sec):
+TDengine daily truck activity per fleet per model:
+min:    64.06ms, med:    66.92ms, mean:    67.17ms, max:   72.29ms, stddev:     2.05ms, sum:   1.3sec, count: 20
+min:    64.06ms, med:    66.92ms, mean:    67.17ms, max:   72.29ms, stddev:     2.05ms, sum:   1.3sec, count: 20
+all queries                                      :
+min:    64.06ms, med:    66.92ms, mean:    67.17ms, max:   72.29ms, stddev:     2.05ms, sum:   1.3sec, count: 20
+min:    64.06ms, med:    66.92ms, mean:    67.17ms, max:   72.29ms, stddev:     2.05ms, sum:   1.3sec, count: 20
+wall clock time: 1.419097sec
+Saving results json file to /Users/nacho/dev/basekick-blogs-labs/arc-vs-tdengine/results/scale1000/tdengine/run1/native/daily-activity.json

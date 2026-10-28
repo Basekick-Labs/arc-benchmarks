@@ -1,0 +1,31 @@
+[12:17:42] arc load start
+[12:18:34] arc load done: client 45.082s, until queryable 52.628s, rows=155585437
+[12:18:57] arc storage 1730072 KB (before compaction 4468304 KB), files 4
+[12:18:59] arc queries (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                   211.0     19     123.3     127.9      0
+low-fuel                                    68.9     19      53.3      54.5      0
+high-load                                  189.2     19     175.3     179.5      0
+stationary-trucks                           16.1     19      14.7      15.3      0
+long-driving-sessions                       35.7     19      35.5      37.0      0
+long-daily-sessions                        164.3     19     161.8     165.9      0
+avg-vs-projected-fuel-consumption           86.9     19      82.7      83.3      0
+avg-load                                   199.1     19     197.1     201.4      0
+daily-activity                             334.3     19     330.7     335.2      0
+[12:19:23] done
+[12:19:24] arc load start
+[12:19:52] arc load done: client 22.293s, until queryable 27.614s, rows=155585437
+[12:20:14] arc storage 1737008 KB (before compaction 4468180 KB), files 4
+[12:20:16] arc queries (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                   218.2     19     121.2     124.0      0
+low-fuel                                    70.7     19      52.6      53.5      0
+high-load                                  185.0     19     173.1     176.3      0
+stationary-trucks                           19.7     19      14.5      15.0      0
+long-driving-sessions                       33.5     19      35.9      37.1      0
+long-daily-sessions                        159.6     19     159.6     162.6      0
+avg-vs-projected-fuel-consumption           89.4     19      83.0      83.8      0
+avg-load                                   188.4     19     188.0     189.9      0
+daily-activity                             318.3     19     308.4     311.2      0
+[12:20:39] done
+ALL_DONE
