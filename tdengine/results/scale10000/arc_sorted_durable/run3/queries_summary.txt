@@ -1,0 +1,10 @@
+type                                     cold ms warm n    median       p95 errors
+last-loc                                   134.0     19      57.9      62.4      0
+low-fuel                                    52.9     19      44.9      47.9      0
+high-load                                   76.2     19      76.8      83.1      0
+stationary-trucks                           23.8     19      34.1      36.4      0
+long-driving-sessions                       34.7     19      32.9      42.7      0
+long-daily-sessions                         67.5     19      64.6      68.9      0
+avg-vs-projected-fuel-consumption           87.6     19      90.0      93.4      0
+avg-load                                   152.2     19     142.7     151.9      0
+daily-activity                             206.1     19     202.0     204.7      0

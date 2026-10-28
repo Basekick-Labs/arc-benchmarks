@@ -10,7 +10,8 @@ W="$(cd "$(dirname "$0")" && pwd)"
 SCALE=$1; ENGINE=$2; RUN=${3:-1}
 DB=iot
 WORKERS=12
-R=$W/results/scale$SCALE/$ENGINE/run$RUN; mkdir -p "$R"
+RNAME=$ENGINE; [ "$ENGINE" = arc ] && RNAME=${ARC_RESULT_NAME:-arc}
+R=$W/results/scale$SCALE/$RNAME/run$RUN; mkdir -p "$R"
 source "$W/run/.env"                       # ARC_ADMIN_TOKEN
 TAOS_CFG=$W/run/taos/cfg
 export HOME_ARCLI=$W/run/arcli-home
