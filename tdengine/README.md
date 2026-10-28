@@ -50,7 +50,18 @@ TDengine's generated query file so Arc runs the same query instances.
 
 - **Arc:** the repo's shipped `arc.toml` (installed by the Docker image and the
   packages), with WAL on (`sync_mode = "fdatasync"`, a full fsync on macOS) and
-  telemetry off. See `configs/make_arc_toml.sh`.
+  telemetry off. See `configs/make_arc_toml.sh`. Four Arc variants are
+  reported, each with its own result directory:
+
+  | Variant | `ingest.sort_keys` | `wal.ack_mode` | Script |
+  |---|---|---|---|
+  | `arc` | none (sorted by time) | `queued` (default) | `run_arc_main.sh` |
+  | `arc_durable` | none | `durable` | `run_arc_main.sh` |
+  | `arc_sorted` | `readings:fleet,name`, `diagnostics:fleet,name` | `queued` | `run_arc_sorted.sh` |
+  | `arc_sorted_durable` | same | `durable` | `run_arc_sorted_durable.sh` |
+
+  Sort keys sort each measurement by fleet and truck before time (Arc appends
+  `time`), and compaction keeps that order.
 - **TDengine:** default `taos.cfg` except data/log/temp paths and
   `timezone UTC`; taosAdapter's installed config with `debug = false`. See
   `configs/make_taos_config.sh`. Database parameters are the ones TDengine's own
@@ -110,7 +121,12 @@ printf 'ARC_ADMIN_TOKEN=%s\n' "$(openssl rand -hex 24)" > $W/run/.env
 ./run_all.sh
 ```
 
-`run_bench.sh <scale> <engine> <run>` runs a single engine and scale.
+`run_bench.sh <scale> <engine> <run>` runs a single engine and scale; set
+`ARC_BIN` to pick the Arc binary in `bin/` and `ARC_RESULT_NAME` to choose the
+result directory. `run_arc_main.sh`, `run_arc_sorted.sh` and
+`run_arc_sorted_durable.sh` produce the Arc variants above (each restores
+`arc.toml` on exit). `python3 results/aggregate.py` rebuilds
+`results/final.json` and `results/summary.txt` from the run directories.
 
 ## Machine
 

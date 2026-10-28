@@ -1,0 +1,10 @@
+ProductName:		macOS
+ProductVersion:		26.6.2
+BuildVersion:		25G83
+Apple M3 Max
+14
+38654705664
+ 8:45  up 29 days, 21:04, 4 users, load averages: 2.45 2.62 3.17
+Load Avg: 2.45, 2.62, 3.17 
+CPU usage: 1.5% user, 6.84% sys, 92.10% idle 
+PhysMem: 9803M used (2922M wired, 287M compressor), 26G unused.
