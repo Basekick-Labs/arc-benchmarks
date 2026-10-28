@@ -14,6 +14,7 @@ import json
 import os
 import re
 import statistics
+from decimal import ROUND_HALF_UP, Decimal
 
 R = os.path.dirname(os.path.abspath(__file__))
 ARC_VARIANTS = {
@@ -77,6 +78,11 @@ def loads(scale, variant):
     }
 
 
+def f1(x):
+    # Half-up to one decimal, matching the page's toFixed(1) on the stored 2-decimal medians.
+    return str(Decimal(str(round(x, 2))).quantize(Decimal('0.1'), rounding=ROUND_HALF_UP))
+
+
 def ratio(arc, td):
     return f'Arc {td / arc:.1f}x' if arc < td else f'TDengine {arc / td:.1f}x'
 
@@ -102,7 +108,7 @@ for scale in (1000, 10000):
         lines.append(f'{v}: instances={total} row mismatches or errors vs tdengine={bad}')
     lines.append(f"{'query':36}{'sorted':>9}{'shipped':>9}{'TD best':>9}  {'sorted vs TD':>15}  {'shipped vs TD':>15}")
     for q in queries:
-        lines.append(f"{q['type']:36}{q['arc_sorted_ms']:9.1f}{q['arc_ms']:9.1f}{q['td_best_ms']:9.1f}  "
+        lines.append(f"{q['type']:36}{f1(q['arc_sorted_ms']):>9}{f1(q['arc_ms']):>9}{f1(q['td_best_ms']):>9}  "
                      f"{ratio(q['arc_sorted_ms'], q['td_best_ms']):>15}  {ratio(q['arc_ms'], q['td_best_ms']):>15}")
     for v, x in ld.items():
         lines.append(f"{v:19} ack={x['ack_s']} med={x['ack_med_s']}s queryable med={x['queryable_med_s']}s "
