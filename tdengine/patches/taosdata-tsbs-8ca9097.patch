@@ -1,0 +1,48 @@
+diff --git a/cmd/tsbs_dump_tdengine_queries/main.go b/cmd/tsbs_dump_tdengine_queries/main.go
+new file mode 100644
+index 0000000..96d412f
+--- /dev/null
++++ b/cmd/tsbs_dump_tdengine_queries/main.go
+@@ -0,0 +1,29 @@
++// tsbs_dump_tdengine_queries decodes a TSBS TDengine query file (gob) and
++// prints one JSON object per query: {"label": ..., "sql": ...}.
++// Used to run the exact same query instances against Arc.
++package main
++
++import (
++	"bufio"
++	"encoding/gob"
++	"encoding/json"
++	"io"
++	"log"
++	"os"
++
++	"github.com/taosdata/tsbs/pkg/query"
++)
++
++func main() {
++	dec := gob.NewDecoder(bufio.NewReaderSize(os.Stdin, 1<<20))
++	enc := json.NewEncoder(os.Stdout)
++	for {
++		q := &query.TDengine{}
++		if err := dec.Decode(q); err == io.EOF {
++			return
++		} else if err != nil {
++			log.Fatal(err)
++		}
++		enc.Encode(map[string]string{"label": string(q.HumanLabel), "sql": string(q.SqlQuery)})
++	}
++}
+diff --git a/pkg/data/usecases/iot/batch_config.go b/pkg/data/usecases/iot/batch_config.go
+index 12ad388..2f3e040 100644
+--- a/pkg/data/usecases/iot/batch_config.go
++++ b/pkg/data/usecases/iot/batch_config.go
+@@ -14,7 +14,7 @@ var (
+ 	eInsertPreviousChance = 0.5
+ 
+ 	// Zero values.
+-	zeroTagChance   = 0.01
++	zeroTagChance   = 0.0 // arc-vs-tdengine: disabled, see methodology
+ 	zeroFieldChance = 0.1
+ )
+ 
