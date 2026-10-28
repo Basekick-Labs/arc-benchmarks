@@ -1,0 +1,366 @@
+[16:47:21] starting (consecutive idle samples=3)
+[16:47:21] arc: sort_keys = [] 
+[16:47:23] arc load start
+[16:47:28] arc load done: client 1.488s, until queryable 4.632s, rows=15560504
+[16:47:32] arc storage 157860 KB (before compaction 430496 KB), files 2
+[16:47:34] arc queries (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                    84.8     19      18.7      20.2      0
+low-fuel                                    11.7     19       9.9      10.3      0
+high-load                                   24.8     19      23.6      24.4      0
+stationary-trucks                            6.4     19       5.5       6.0      0
+long-driving-sessions                        9.1     19       9.1       9.6      0
+long-daily-sessions                         23.0     19      21.9      22.7      0
+avg-vs-projected-fuel-consumption           11.2     19      10.9      11.3      0
+avg-load                                    21.4     19      21.3      21.6      0
+daily-activity                              29.5     19      28.7      29.4      0
+[16:47:37] done
+[16:47:38] arc load start
+[16:48:32] arc load done: client 45.56s, until queryable 53.093s, rows=155585437
+[16:48:54] arc storage 1731332 KB (before compaction 4468236 KB), files 4
+[16:48:55] arc queries (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                   209.7     19     120.3     122.3      0
+low-fuel                                    69.1     19      53.9      54.8      0
+high-load                                  181.9     19     176.1     182.0      0
+stationary-trucks                           15.9     19      13.8      15.1      0
+long-driving-sessions                       33.8     19      35.2      37.2      0
+long-daily-sessions                        163.3     19     161.6     166.4      0
+avg-vs-projected-fuel-consumption           91.0     19      87.6      88.4      0
+avg-load                                   215.0     19     211.7     214.0      0
+daily-activity                             352.0     19     346.7     350.5      0
+[16:49:19] done
+[16:49:21] arc load start
+[16:49:26] arc load done: client 1.62s, until queryable 4.774s, rows=15560504
+[16:49:30] arc storage 157860 KB (before compaction 430460 KB), files 2
+[16:49:32] arc queries (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                    88.5     19      18.7      19.5      0
+low-fuel                                    11.0     19      10.0      10.3      0
+high-load                                   23.5     19      23.4      24.2      0
+stationary-trucks                            6.6     19       5.4       5.7      0
+long-driving-sessions                        9.0     19       9.1       9.5      0
+long-daily-sessions                         21.5     19      21.3      22.0      0
+avg-vs-projected-fuel-consumption           11.7     19      10.9      11.3      0
+avg-load                                    21.0     19      20.9      21.2      0
+daily-activity                              28.9     19      28.8      29.2      0
+[16:49:35] done
+[16:49:36] arc load start
+[16:50:24] arc load done: client 38.276s, until queryable 47.467s, rows=155585437
+[16:50:46] arc storage 1738136 KB (before compaction 4468380 KB), files 4
+[16:50:47] arc queries (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                   249.1     19     122.6     130.4      0
+low-fuel                                    70.5     19      52.8      54.7      0
+high-load                                  190.6     19     176.3     179.8      0
+stationary-trucks                           16.3     19      14.2      14.8      0
+long-driving-sessions                       33.8     19      35.8      36.4      0
+long-daily-sessions                        167.0     19     159.7     163.7      0
+avg-vs-projected-fuel-consumption           88.9     19      83.2      83.7      0
+avg-load                                   187.3     19     184.6     216.1      0
+daily-activity                             317.0     19     305.9     310.8      0
+[16:51:10] done
+[16:51:12] arc load start
+[16:51:17] arc load done: client 1.571s, until queryable 4.727s, rows=15560504
+[16:51:21] arc storage 157864 KB (before compaction 430444 KB), files 2
+[16:51:23] arc queries (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                    88.2     19      19.1      19.6      0
+low-fuel                                    11.3     19       9.6       9.9      0
+high-load                                   23.5     19      23.5      25.5      0
+stationary-trucks                            6.2     19       5.7       6.2      0
+long-driving-sessions                        9.2     19       9.2       9.8      0
+long-daily-sessions                         22.2     19      21.7      23.1      0
+avg-vs-projected-fuel-consumption           11.5     19      10.9      11.1      0
+avg-load                                    20.9     19      21.4      21.8      0
+daily-activity                              30.1     19      29.2      29.5      0
+[16:51:26] done
+[16:51:27] arc load start
+[16:51:53] arc load done: client 21.763s, until queryable 26.049s, rows=155585437
+[16:52:16] arc storage 1754344 KB (before compaction 4468232 KB), files 4
+[16:52:18] arc queries (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                   216.7     19     119.1     123.5      0
+low-fuel                                    69.3     19      53.7      55.1      0
+high-load                                  191.1     19     177.2     180.3      0
+stationary-trucks                           20.7     19      13.9      14.7      0
+long-driving-sessions                       33.7     19      35.1      36.6      0
+long-daily-sessions                        160.4     19     157.0     161.9      0
+avg-vs-projected-fuel-consumption           87.6     19      82.7      83.4      0
+avg-load                                   186.8     19     184.6     185.5      0
+daily-activity                             313.6     19     303.4     305.5      0
+[16:52:41] done
+[16:52:41] arc_durable: sort_keys = [] ack_mode = "durable" 
+[16:52:42] arc load start
+[16:52:48] arc load done: client 2.879s, until queryable 6.045s, rows=15560504
+[16:52:52] arc storage 157856 KB (before compaction 430476 KB), files 2
+[16:52:54] arc queries (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                    87.6     19      18.8      19.4      0
+low-fuel                                    11.8     19       9.8      10.2      0
+high-load                                   24.5     19      23.1      24.9      0
+stationary-trucks                            6.4     19       5.5       5.9      0
+long-driving-sessions                        9.0     19       9.0       9.4      0
+long-daily-sessions                         20.1     19      20.8      22.3      0
+avg-vs-projected-fuel-consumption           12.2     19      11.4      11.6      0
+avg-load                                    22.6     19      23.0      24.2      0
+daily-activity                              30.2     19      30.2      33.4      0
+[16:52:57] done
+[16:52:59] arc load start
+[16:53:28] arc load done: client 26.044s, until queryable 29.224s, rows=155585437
+[16:53:44] arc storage 1753404 KB (before compaction 4469584 KB), files 4
+[16:53:45] arc queries (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                   205.3     19     118.9     121.2      0
+low-fuel                                    56.3     19      52.2      53.4      0
+high-load                                  167.9     19     172.4     176.5      0
+stationary-trucks                           15.3     19      13.4      14.1      0
+long-driving-sessions                       33.7     19      34.2      36.5      0
+long-daily-sessions                        160.9     19     157.9     162.2      0
+avg-vs-projected-fuel-consumption           85.9     19      83.3      84.1      0
+avg-load                                   183.8     19     186.1     188.6      0
+daily-activity                             314.5     19     309.2     312.9      0
+[16:54:08] done
+[16:54:10] arc load start
+[16:54:16] arc load done: client 2.753s, until queryable 5.941s, rows=15560504
+[16:54:20] arc storage 157864 KB (before compaction 430472 KB), files 2
+[16:54:22] arc queries (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                    89.4     19      18.9      20.3      0
+low-fuel                                    10.8     19       9.7      10.1      0
+high-load                                   23.0     19      23.4      24.8      0
+stationary-trucks                            6.3     19       5.5       5.9      0
+long-driving-sessions                        8.7     19       9.0       9.3      0
+long-daily-sessions                         20.7     19      21.5      22.6      0
+avg-vs-projected-fuel-consumption           11.0     19      10.9      11.1      0
+avg-load                                    20.8     19      20.9      21.2      0
+daily-activity                              29.5     19      28.8      29.6      0
+[16:54:25] done
+[16:54:26] arc load start
+[16:54:55] arc load done: client 25.846s, until queryable 29.047s, rows=155585437
+[16:55:12] arc storage 1736900 KB (before compaction 4469608 KB), files 4
+[16:55:14] arc queries (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                   202.4     19     119.9     122.3      0
+low-fuel                                    66.7     19      53.8      55.5      0
+high-load                                  184.7     19     175.9     185.0      0
+stationary-trucks                           16.0     19      14.0      14.9      0
+long-driving-sessions                       34.9     19      35.2      36.7      0
+long-daily-sessions                        159.6     19     158.4     162.6      0
+avg-vs-projected-fuel-consumption           86.7     19      82.7      83.8      0
+avg-load                                   191.0     19     183.9     186.3      0
+daily-activity                             316.7     19     304.7     306.7      0
+[16:55:37] done
+[16:55:38] arc load start
+[16:55:44] arc load done: client 2.917s, until queryable 6.076s, rows=15560504
+[16:55:48] arc storage 157864 KB (before compaction 430520 KB), files 2
+[16:55:50] arc queries (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                    88.1     19      18.7      19.8      0
+low-fuel                                    12.6     19      10.0      10.3      0
+high-load                                   24.6     19      23.4      24.5      0
+stationary-trucks                            6.6     19       5.7       6.4      0
+long-driving-sessions                        9.1     19       9.0       9.4      0
+long-daily-sessions                         21.1     19      21.2      22.1      0
+avg-vs-projected-fuel-consumption           11.3     19      10.9      11.2      0
+avg-load                                    21.1     19      21.0      21.3      0
+daily-activity                              28.9     19      29.1      30.0      0
+[16:55:54] done
+[16:55:55] arc load start
+[16:56:24] arc load done: client 25.838s, until queryable 29.022s, rows=155585437
+[16:56:40] arc storage 1769652 KB (before compaction 4469680 KB), files 4
+[16:56:42] arc queries (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                   193.7     19     121.6     124.0      0
+low-fuel                                    57.9     19      53.4      54.2      0
+high-load                                  173.6     19     176.6     183.5      0
+stationary-trucks                           15.7     19      14.4      15.1      0
+long-driving-sessions                       35.9     19      35.8      36.6      0
+long-daily-sessions                        164.8     19     158.5     163.2      0
+avg-vs-projected-fuel-consumption           82.9     19      82.3      82.8      0
+avg-load                                   185.5     19     183.6     185.3      0
+daily-activity                             314.0     19     306.3     309.0      0
+[16:57:05] done
+[16:57:05] arc_sorted: sort_keys = ["readings:fleet,name", "diagnostics:fleet,name"] 
+[16:57:07] arc load start
+[16:57:11] arc load done: client 1.462s, until queryable 4.625s, rows=15560504
+[16:57:15] arc storage 122768 KB (before compaction 267096 KB), files 2
+[16:57:18] arc queries (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                    84.0     19      15.4      16.0      0
+low-fuel                                     9.9     19       8.4       9.4      0
+high-load                                   15.6     19      15.9      20.1      0
+stationary-trucks                            5.6     19       5.3       5.6      0
+long-driving-sessions                        8.1     19       7.9       8.2      0
+long-daily-sessions                         14.6     19      14.7      15.5      0
+avg-vs-projected-fuel-consumption           11.6     19      11.4      11.7      0
+avg-load                                    20.0     19      19.9      20.2      0
+daily-activity                              24.9     19      25.4      25.7      0
+[16:57:20] done
+[16:57:22] arc load start
+[16:58:03] arc load done: client 34.481s, until queryable 40.934s, rows=155585437
+[16:58:25] arc storage 1241516 KB (before compaction 2685956 KB), files 4
+[16:58:27] arc queries (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                   122.8     19      45.9      47.7      0
+low-fuel                                    35.0     19      27.0      28.9      0
+high-load                                   76.8     19      74.0      78.6      0
+stationary-trucks                           15.4     19      13.6      14.2      0
+long-driving-sessions                       19.2     19      19.7      21.1      0
+long-daily-sessions                         66.9     19      64.7      68.4      0
+avg-vs-projected-fuel-consumption           93.1     19      87.1      89.8      0
+avg-load                                   147.3     19     147.3     148.4      0
+daily-activity                             202.5     19     194.7     195.9      0
+[16:58:41] done
+[16:58:42] arc load start
+[16:58:47] arc load done: client 1.506s, until queryable 4.663s, rows=15560504
+[16:58:51] arc storage 122768 KB (before compaction 267080 KB), files 2
+[16:58:53] arc queries (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                    85.0     19      15.5      16.0      0
+low-fuel                                    10.4     19       8.4       9.6      0
+high-load                                   16.1     19      16.3      17.0      0
+stationary-trucks                            5.9     19       5.4       5.6      0
+long-driving-sessions                        7.8     19       7.9       8.4      0
+long-daily-sessions                         14.5     19      14.6      15.4      0
+avg-vs-projected-fuel-consumption           11.8     19      11.4      11.5      0
+avg-load                                    20.2     19      20.3      20.7      0
+daily-activity                              26.1     19      25.9      26.2      0
+[16:58:56] done
+[16:58:57] arc load start
+[16:59:24] arc load done: client 22.667s, until queryable 26.962s, rows=155585437
+[16:59:46] arc storage 1242020 KB (before compaction 2684596 KB), files 4
+[16:59:47] arc queries (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                   123.0     19      44.9      46.5      0
+low-fuel                                    31.8     19      27.2      29.2      0
+high-load                                   78.3     19      76.9      81.4      0
+stationary-trucks                           15.8     19      13.1      13.7      0
+long-driving-sessions                       19.0     19      19.4      20.2      0
+long-daily-sessions                         66.5     19      62.6      66.3      0
+avg-vs-projected-fuel-consumption           92.0     19      87.7      89.8      0
+avg-load                                   149.4     19     150.9     152.5      0
+daily-activity                             211.6     19     211.4     223.6      0
+[17:00:01] done
+[17:00:03] arc load start
+[17:00:08] arc load done: client 1.545s, until queryable 4.739s, rows=15560504
+[17:00:12] arc storage 122768 KB (before compaction 267092 KB), files 2
+[17:00:14] arc queries (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                    84.6     19      15.8      16.5      0
+low-fuel                                     9.7     19       8.3       9.4      0
+high-load                                   16.1     19      15.9      16.5      0
+stationary-trucks                            5.9     19       5.3       5.6      0
+long-driving-sessions                        8.0     19       8.1       9.2      0
+long-daily-sessions                         15.5     19      15.0      15.7      0
+avg-vs-projected-fuel-consumption           11.6     19      11.4      11.6      0
+avg-load                                    20.1     19      19.6      20.2      0
+daily-activity                              26.1     19      25.5      26.0      0
+[17:00:17] done
+[17:00:18] arc load start
+[17:00:44] arc load done: client 22.026s, until queryable 26.409s, rows=155585437
+[17:01:06] arc storage 1241284 KB (before compaction 2685232 KB), files 4
+[17:01:09] arc queries (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                   122.8     19      44.8      47.9      0
+low-fuel                                    34.3     19      27.6      29.3      0
+high-load                                   76.5     19      73.9      78.8      0
+stationary-trucks                           15.1     19      13.6      14.5      0
+long-driving-sessions                       18.6     19      19.5      20.5      0
+long-daily-sessions                         65.9     19      62.2      66.7      0
+avg-vs-projected-fuel-consumption           89.8     19      86.1      87.6      0
+avg-load                                   147.3     19     146.7     147.4      0
+daily-activity                             198.3     19     195.3     197.0      0
+[17:01:22] done
+[17:01:22] arc_sorted_durable: sort_keys = ["readings:fleet,name", "diagnostics:fleet,name"] ack_mode = "durable" 
+[17:01:24] arc load start
+[17:01:29] arc load done: client 2.774s, until queryable 4.879s, rows=15560504
+[17:01:33] arc storage 122768 KB (before compaction 267248 KB), files 2
+[17:01:35] arc queries (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                    84.4     19      15.7      17.8      0
+low-fuel                                     9.4     19       8.3       9.3      0
+high-load                                   16.0     19      15.8      16.8      0
+stationary-trucks                            5.9     19       5.2       5.7      0
+long-driving-sessions                        7.7     19       7.9       8.2      0
+long-daily-sessions                         15.4     19      14.8      15.3      0
+avg-vs-projected-fuel-consumption           11.7     19      11.5      11.6      0
+avg-load                                    19.9     19      19.6      19.9      0
+daily-activity                              25.9     19      25.6      26.2      0
+[17:01:38] done
+[17:01:39] arc load start
+[17:02:06] arc load done: client 24.91s, until queryable 27.083s, rows=155585437
+[17:02:22] arc storage 1258424 KB (before compaction 2687516 KB), files 4
+[17:02:24] arc queries (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                   120.2     19      44.8      46.4      0
+low-fuel                                    33.8     19      27.6      30.0      0
+high-load                                   75.9     19      72.7      78.1      0
+stationary-trucks                           15.3     19      13.6      14.5      0
+long-driving-sessions                       18.5     19      19.7      21.6      0
+long-daily-sessions                         66.6     19      62.5      66.7      0
+avg-vs-projected-fuel-consumption           92.7     19      88.4      89.5      0
+avg-load                                   147.4     19     146.8     147.4      0
+daily-activity                             198.2     19     194.3     195.8      0
+[17:02:38] done
+[17:02:39] arc load start
+[17:02:44] arc load done: client 2.795s, until queryable 4.911s, rows=15560504
+[17:02:48] arc storage 122768 KB (before compaction 267272 KB), files 2
+[17:02:49] arc queries (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                    84.3     19      15.4      15.9      0
+low-fuel                                     9.7     19       8.4       9.2      0
+high-load                                   16.1     19      16.2      17.2      0
+stationary-trucks                            6.0     19       5.3       5.6      0
+long-driving-sessions                        7.9     19       7.9       8.1      0
+long-daily-sessions                         14.6     19      14.5      15.4      0
+avg-vs-projected-fuel-consumption           11.9     19      11.3      11.5      0
+avg-load                                    20.3     19      19.8      20.3      0
+daily-activity                              26.1     19      25.5      25.9      0
+[17:02:52] done
+[17:02:53] arc load start
+[17:03:21] arc load done: client 24.274s, until queryable 27.479s, rows=155585437
+[17:03:37] arc storage 1257596 KB (before compaction 2686348 KB), files 4
+[17:03:39] arc queries (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                   121.0     19      45.5      48.1      0
+low-fuel                                    33.7     19      28.1      29.5      0
+high-load                                   76.6     19      74.7      79.5      0
+stationary-trucks                           15.3     19      13.5      14.5      0
+long-driving-sessions                       20.9     19      19.5      21.3      0
+long-daily-sessions                         67.0     19      63.4      67.2      0
+avg-vs-projected-fuel-consumption           87.8     19      87.7      88.5      0
+avg-load                                   147.1     19     147.2     148.8      0
+daily-activity                             199.3     19     201.4     205.9      0
+[17:03:53] done
+[17:03:54] arc load start
+[17:04:00] arc load done: client 2.728s, until queryable 5.895s, rows=15560504
+[17:04:05] arc storage 122768 KB (before compaction 267140 KB), files 2
+[17:04:07] arc queries (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                    83.7     19      15.8      16.5      0
+low-fuel                                     9.9     19       8.4       9.5      0
+high-load                                   16.1     19      15.8      16.3      0
+stationary-trucks                            6.1     19       5.2       5.6      0
+long-driving-sessions                        7.9     19       8.0       8.3      0
+long-daily-sessions                         16.1     19      15.1      16.3      0
+avg-vs-projected-fuel-consumption           11.4     19      11.4      11.5      0
+avg-load                                    20.2     19      19.6      20.3      0
+daily-activity                              26.3     19      25.6      26.2      0
+[17:04:09] done
+[17:04:11] arc load start
+[17:04:38] arc load done: client 24.396s, until queryable 27.598s, rows=155585437
+[17:04:54] arc storage 1257564 KB (before compaction 2687672 KB), files 4
+[17:04:56] arc queries (restarted, first instance per type is cold)
+type                                     cold ms warm n    median       p95 errors
+last-loc                                   120.8     19      44.3      46.5      0
+low-fuel                                    31.4     19      27.3      28.8      0
+high-load                                   77.3     19      74.3      79.5      0
+stationary-trucks                           15.1     19      13.0      14.0      0
+long-driving-sessions                       19.4     19      19.7      23.2      0
+long-daily-sessions                         64.9     19      63.1      65.7      0
+avg-vs-projected-fuel-consumption           90.3     19      90.3      92.4      0
+avg-load                                   147.6     19     148.2     149.8      0
+daily-activity                             197.8     19     195.7     200.0      0
+[17:05:09] done
+ALL_DONE

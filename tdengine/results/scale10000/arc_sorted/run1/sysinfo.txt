@@ -4,7 +4,7 @@ BuildVersion:		25G83
 Apple M3 Max
 14
 38654705664
- 8:46  up 29 days, 21:04, 4 users, load averages: 3.28 2.80 3.23
-Load Avg: 3.28, 2.80, 3.23 
-CPU usage: 1.5% user, 6.31% sys, 92.63% idle 
-PhysMem: 9950M used (2926M wired, 290M compressor), 25G unused.
+12:57  up 30 days,  1:15, 2 users, load averages: 10.06 11.14 7.90
+Load Avg: 10.06, 11.14, 7.90 
+CPU usage: 0.96% user, 6.25% sys, 92.78% idle 
+PhysMem: 9190M used (2825M wired, 1413M compressor), 26G unused.

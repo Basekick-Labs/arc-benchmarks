@@ -55,10 +55,10 @@ TDengine's generated query file so Arc runs the same query instances.
 
   | Variant | `ingest.sort_keys` | `wal.ack_mode` | Script |
   |---|---|---|---|
-  | `arc` | none (sorted by time) | `queued` (default) | `run_arc_main.sh` |
-  | `arc_durable` | none | `durable` | `run_arc_main.sh` |
-  | `arc_sorted` | `readings:fleet,name`, `diagnostics:fleet,name` | `queued` | `run_arc_sorted.sh` |
-  | `arc_sorted_durable` | same | `durable` | `run_arc_sorted_durable.sh` |
+  | `arc` | none (sorted by time) | `queued` (default) | `run_arc_0080.sh` |
+  | `arc_durable` | none | `durable` | `run_arc_0080.sh` |
+  | `arc_sorted` | `readings:fleet,name`, `diagnostics:fleet,name` | `queued` | `run_arc_0080.sh` |
+  | `arc_sorted_durable` | same | `durable` | `run_arc_0080.sh` |
 
   Sort keys sort each measurement by fleet and truck before time (Arc appends
   `time`), and compaction keeps that order.
@@ -123,8 +123,8 @@ printf 'ARC_ADMIN_TOKEN=%s\n' "$(openssl rand -hex 24)" > $W/run/.env
 
 `run_bench.sh <scale> <engine> <run>` runs a single engine and scale; set
 `ARC_BIN` to pick the Arc binary in `bin/` and `ARC_RESULT_NAME` to choose the
-result directory. `run_arc_main.sh`, `run_arc_sorted.sh` and
-`run_arc_sorted_durable.sh` produce the Arc variants above (each restores
+result directory. `run_arc_0080.sh` produces all four Arc variants above
+(set its `ARC_BIN` to the binary under test; it restores
 `arc.toml` on exit). `python3 results/aggregate.py` rebuilds
 `results/final.json` and `results/summary.txt` from the run directories.
 

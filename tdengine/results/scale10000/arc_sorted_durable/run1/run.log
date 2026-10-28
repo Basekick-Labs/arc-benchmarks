@@ -1,5 +1,5 @@
-[14:38:56] arc load start
-[14:39:55] arc load done: client 48.999s, until queryable 58.701s, rows=155585437
-[14:40:17] arc storage 1301620 KB (before compaction 2685232 KB), files 4
-[14:40:18] arc queries (restarted, first instance per type is cold)
-[14:40:34] done
+[17:01:39] arc load start
+[17:02:06] arc load done: client 24.91s, until queryable 27.083s, rows=155585437
+[17:02:22] arc storage 1258424 KB (before compaction 2687516 KB), files 4
+[17:02:24] arc queries (restarted, first instance per type is cold)
+[17:02:38] done
