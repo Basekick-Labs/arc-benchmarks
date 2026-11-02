@@ -1,0 +1,93 @@
+{
+  "rows": 10000000,
+  "env": {
+    "machine": "arm64",
+    "python": "3.14.7",
+    "polars": "2.1.0",
+    "pyarrow": "26.0.0"
+  },
+  "formats": {
+    "csv": {
+      "bytes": 827677152,
+      "write_s": 0.357,
+      "queries_s": {
+        "full_read": 0.7492,
+        "avg_one_column": 0.1291,
+        "group_by_site": 0.154,
+        "one_hour_window": 0.6649
+      }
+    },
+    "csv_gzip": {
+      "bytes": 197884387,
+      "write_s": 19.291,
+      "queries_s": {
+        "full_read": 0.8089,
+        "avg_one_column": 0.7643,
+        "group_by_site": 0.7654,
+        "one_hour_window": 0.7967
+      }
+    },
+    "parquet_snappy": {
+      "bytes": 238791480,
+      "write_s": 0.275,
+      "queries_s": {
+        "full_read": 0.069,
+        "avg_one_column": 0.0086,
+        "group_by_site": 0.0233,
+        "one_hour_window": 0.007
+      }
+    },
+    "parquet_zstd": {
+      "bytes": 155365584,
+      "write_s": 0.19,
+      "queries_s": {
+        "full_read": 0.0751,
+        "avg_one_column": 0.0094,
+        "group_by_site": 0.028,
+        "one_hour_window": 0.0101
+      }
+    }
+  },
+  "csv_inferred_schema": {
+    "time": "Datetime(time_unit='us', time_zone=None)",
+    "device_id": "String",
+    "site": "String",
+    "firmware": "Date",
+    "zip_code": "Int64",
+    "temperature": "Float64",
+    "humidity": "Float64",
+    "pressure": "Float64",
+    "voltage": "Float64",
+    "error_code": "Int64"
+  },
+  "parquet_schema": {
+    "time": "Datetime(time_unit='us', time_zone=None)",
+    "device_id": "String",
+    "site": "String",
+    "firmware": "String",
+    "zip_code": "String",
+    "temperature": "Float64",
+    "humidity": "Float64",
+    "pressure": "Float64",
+    "voltage": "Float64",
+    "error_code": "Int32"
+  },
+  "parquet_row_groups": 10,
+  "parquet_rg0_time_stats": [
+    "2026-10-01 00:00:00",
+    "2026-10-02 03:46:39.900000"
+  ],
+  "parquet_zstd_delta_bytes": 97156393,
+  "column_bytes_zstd": {
+    "time": 27252061,
+    "device_id": 16384231,
+    "site": 6037831,
+    "firmware": 2015295,
+    "zip_code": 24116441,
+    "temperature": 23437954,
+    "humidity": 20517692,
+    "pressure": 18429151,
+    "voltage": 15468567,
+    "error_code": 1665741
+  }
+}
