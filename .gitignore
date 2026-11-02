@@ -10,3 +10,6 @@ clickbench/ab_*.txt
 
 # macOS
 .DS_Store
+
+# Parquet vs CSV generated data
+parquet_vs_csv/data/
