@@ -272,3 +272,70 @@ func TestCannotFollow(t *testing.T) {
 		}
 	}
 }
+
+func TestLatencyStats(t *testing.T) {
+	var ds []time.Duration
+	for i := 100; i >= 1; i-- {
+		ds = append(ds, time.Duration(i)*time.Millisecond)
+	}
+	got := latencyStats(map[string][]time.Duration{"json": ds})["json"]
+	if got.N != 100 || got.P50 != 50 || got.P90 != 90 || got.P99 != 99 || got.Max != 100 {
+		t.Fatalf("%+v", got)
+	}
+}
+
+// The DELETE-concurrent judge: an answer may show the total before or after
+// a DELETE that could be visible to it; an empty 200 never passes.
+func TestDeleteCellJudge(t *testing.T) {
+	d := &deleteCell{perHour: []tally{{10, 100}, {10, 200}, {10, 300}}}
+	lag := 4 * time.Second
+	del := base.Add(time.Minute)
+	d.deletes = []deleteStep{{sent: del, done: del.Add(time.Second)}}
+	before, after := d.total(0), d.total(1)
+	at := func(send time.Time, status int, tl tally, empty bool) deleteCheck {
+		return deleteCheck{node: "r", send: send, recv: send.Add(10 * time.Millisecond), status: status, count: tl.count, sum: tl.sum, empty: empty}
+	}
+	d.checks = []deleteCheck{
+		at(base, 200, before, false),                   // before the DELETE: pass
+		at(del.Add(2*time.Second), 200, before, false), // just done, within the lag: either total
+		at(del.Add(2*time.Second), 200, after, false),  // pass
+		at(del.Add(time.Minute), 200, after, false),    // pass
+		at(del.Add(time.Minute), 200, before, false),   // the deleted rows back after the lag: FAIL
+		at(del.Add(time.Minute), 200, tally{}, true),   // empty 200: FAIL
+		at(del.Add(time.Minute), 503, tally{}, false),  // retryable: counted apart
+		at(base, 200, tally{30, 601}, false),           // a total no state has: FAIL
+	}
+	rep := d.judge(lag)
+	if rep.Pass != 4 || rep.Fail != 3 || rep.Unavailable != 1 {
+		t.Fatalf("%+v", rep)
+	}
+}
+
+// A relative window starting in the live hour gets the same contract: a
+// future-stamped row flushed long before may be hidden (the m1-live and
+// m2-live60 "wrong answers" of the first matrix rerun), an ordinary row
+// may not.
+func TestJudgeRelativeWindowFutureStampedContract(t *testing.T) {
+	flush := base.Add(10 * time.Minute)
+	l := newLedger()
+	l.sent("m0", []*row{
+		{seq: 1, tsUs: flush.Add(-time.Minute).UnixMicro(), sentAt: flush, ackedAt: flush},
+		{seq: 2, tsUs: flush.Add(35 * time.Minute).UnixMicro(), sentAt: flush, ackedAt: flush, fut: true}, // 10:45, ahead of the 10:39:30 start
+	})
+	send := flush.Add(30 * time.Minute)
+	q := query{kind: kindCountSum, meas: "m0", relative: true, span: 30 * time.Second, sel: func(now int64) match { return gt(now - 30e6) }}
+	r := rec(l, q, "frozen", send, 0, answer(0, 0, 0, 0))
+	j := judge{l: l, margin: 300 * time.Second}
+	if v := j.settle(r); v.status != pass || !v.mayMiss {
+		t.Fatalf("a future-stamped row hidden in its live hour: %+v", v)
+	}
+	if v := (judge{l: l}).settle(r); v.status != fail {
+		t.Fatalf("without file pruning the row must be there: %+v", v)
+	}
+	// An ordinary row in the window is never excused.
+	l.sent("m0", []*row{{seq: 3, tsUs: send.Add(-10 * time.Second).UnixMicro(), sentAt: send.Add(-time.Minute), ackedAt: send.Add(-time.Minute)}})
+	r = rec(l, q, "frozen", send, 0, answer(0, 0, 0, 0))
+	if v := j.settle(r); v.status != fail {
+		t.Fatalf("a dropped ordinary row passed: %+v", v)
+	}
+}
